@@ -30,8 +30,12 @@ Object.assign(messages.zh, { editPlace:'编辑展示资料',editLead:'管理员�
 Object.assign(messages.en, { editPlace:'Edit displayed information',editLead:'Administrator changes are shown to everyone immediately and audited. The original Notion content is not rewritten.',displayName:'Display name',memoryLabel:'Memory label',tagsLabel:'Search tags',phoneLabel:'Phone',websiteLabel:'Website',hoursLabel:'Opening hours',photoUrls:'Photo URLs',saveChanges:'Save and publish',savedChanges:'Updated. Everyone can now see the changes.',maintainedBy:'Maintained by {name}' });
 Object.assign(messages.th, { editPlace:'แก้ไขข้อมูลที่แสดง',editLead:'การแก้ไขของผู้ดูแลจะแสดงต่อทุกคนทันทีและมีบันทึก โดยไม่แก้ไขต้นฉบับ Notion',displayName:'ชื่อที่แสดง',memoryLabel:'แท็กความจำ',tagsLabel:'แท็กค้นหา',phoneLabel:'โทรศัพท์',websiteLabel:'เว็บไซต์',hoursLabel:'เวลาเปิด',photoUrls:'ลิงก์รูปภาพ',saveChanges:'บันทึกและเผยแพร่',savedChanges:'อัปเดตแล้ว ทุกคนเห็นการเปลี่ยนแปลงได้แล้ว',maintainedBy:'ดูแลล่าสุดโดย {name}' });
 Object.assign(messages.ja, { editPlace:'表示情報を編集',editLead:'管理者の変更はすべてのユーザーに即時反映され、操作履歴に記録されます。Notion の原本は変更しません。',displayName:'表示名',memoryLabel:'記憶タグ',tagsLabel:'検索タグ',phoneLabel:'電話',websiteLabel:'ウェブサイト',hoursLabel:'営業時間',photoUrls:'表示写真のURL',saveChanges:'保存して公開',savedChanges:'更新しました。すべてのユーザーに反映されています。',maintainedBy:'最終更新: {name}' });
+Object.assign(messages.zh, { globeMode:'平面地图', flatMapNote:'平面地图 · 四边各距市中心 50 公里', outsideTitle:'50 公里之外（{n}）', outsideLead:'这些地点距市中心超过 50 公里：超出上下左右边界的用 ▲ 标在边界上，其余在方框内、虚线圆外。', outsideKm:'距市中心 {n} 公里', boundaryNote:'以清迈市中心为中心 · 上下左右各 50 公里' });
+Object.assign(messages.en, { globeMode:'Flat map', flatMapNote:'Flat map · 50 km from the centre on each side', outsideTitle:'Beyond 50 km ({n})', outsideLead:'These places are more than 50 km from the centre: those outside the four edges are marked with ▲ on the boundary, the rest stay inside the square but outside the dashed circle.', outsideKm:'{n} km from the centre', boundaryNote:'Centred on Chiang Mai · 50 km on each side' });
+Object.assign(messages.ja, { globeMode:'平面地図', flatMapNote:'平面地図・四辺それぞれ市中心から 50 km', outsideTitle:'50 km 圏外（{n} 件）', outsideLead:'市中心から 50 km を超える地点です。四辺の外にある地点は境界上に ▲ で示し、それ以外は枠内・破線円外にあります。', outsideKm:'市中心から {n} km', boundaryNote:'チェンマイ市中心・上下左右それぞれ 50 km' });
+Object.assign(messages.th, { globeMode:'แผนที่ระนาบ', flatMapNote:'แผนที่ระนาบ · ขอบแต่ละด้านห่างจากใจกลางเมือง 50 กม.', outsideTitle:'เกิน 50 กม. ({n} แห่ง)', outsideLead:'สถานที่เหล่านี้อยู่เกิน 50 กม. จากใจกลางเมือง โดยที่อยู่นอกขอบทั้งสี่แสดงด้วย ▲ บนขอบเขต ส่วนที่เหลืออยู่ในกรอบแต่นอกวงกลมเส้นประ', outsideKm:'ห่างจากใจกลางเมือง {n} กม.', boundaryNote:'ใจกลางเชียงใหม่ · ทุกด้าน 50 กม.' });
 const t = (key, vars = {}) => Object.entries(vars).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), messages[language]?.[key] || messages.zh[key] || key);
-function applyLanguage() { document.documentElement.lang = language === 'zh' ? 'zh-CN' : language; document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); }); document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); }); document.querySelectorAll('.language-select').forEach(select => { select.value = language; }); if (data) { renderRemembered(); renderCategories(); render(); } }
+function applyLanguage() { document.documentElement.lang = language === 'zh' ? 'zh-CN' : language; updateMapEdges(); document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); }); document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); }); document.querySelectorAll('.language-select').forEach(select => { select.value = language; }); if (data) { renderRemembered(); renderCategories(); render(); } }
 const categoryPalette = ['#e96f43', '#2f7d69', '#d59b2d', '#6c67a9', '#3c78a8', '#b45b78', '#657d3e', '#9a6544', '#297e8d', '#8e6eaf', '#c47734', '#4f8275'];
 const categoryColor = category => categoryPalette[Math.max(0, data?.categories?.indexOf(category) || 0) % categoryPalette.length];
 function categoryMeta(category = '') { const rules = [
@@ -39,7 +43,7 @@ function categoryMeta(category = '') { const rules = [
 ]; const match = rules.find(([pattern]) => pattern.test(category)); return match ? { icon: match[1], short: match[2] } : { icon: '✨', short: category.replace(/^[一二三四五六七八九十]+[，、.]?/, '').replace(/[|@&（(].*$/, '').trim().slice(0, 2) || '推荐' }; }
 function stableNumber(value = '') { let hash = 2166136261; for (const char of String(value)) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619); return hash >>> 0; }
 function clusterCenter(category) { const index = Math.max(0, data?.categories?.indexOf(category) || 0), ring = index < 1 ? 0 : index < 7 ? 1 : index < 19 ? 2 : 3, position = ring ? index - (ring === 1 ? 1 : ring === 2 ? 7 : 19) : 0, total = [1, 6, 12, 8][ring], angle = (position / total * Math.PI * 2) - Math.PI / 2, radius = [0, 2.05, 4.15, 6.1][ring]; return { lng: 101 + Math.cos(angle) * radius, lat: 14 + Math.sin(angle) * radius * .86 }; }
-function displayLocation(item) { if (nearbyMode) return item.location; const center = clusterCenter(item.category), siblings = data.items.filter(x => x.category === item.category).sort((a, b) => String(a.id).localeCompare(String(b.id))), index = Math.max(0, siblings.findIndex(x => x.id === item.id)), ring = Math.floor(index / 8) + 1, position = index % 8, angle = position / 8 * Math.PI * 2 + (ring % 2 ? Math.PI / 8 : 0), radius = index ? ring * .2 : 0; return { lng: center.lng + Math.cos(angle) * radius, lat: center.lat + Math.sin(angle) * radius * .78 }; }
+function displayLocation(item) { return item.location; } // 平面地图：所有地点落在真实经纬度上，不再使用球形聚簇偏移
 
 async function api(url, options) { const response = await fetch(url, options); const body = await response.json().catch(() => ({})); if (!response.ok) throw Object.assign(new Error(body.error || '请求失败'), { status: response.status, retry: body.retryAfter }); return body; }
 function remembered() { try { return JSON.parse(localStorage.getItem(rememberedKey) || '[]'); } catch { return []; } }
@@ -69,33 +73,119 @@ function distanceKm(a, b) { const rad = n => n * Math.PI / 180, earth = 6371, dL
 function filteredItems() { const query = $('#search').value.trim().toLocaleLowerCase(); let list = data.items.filter(x => (active === '全部' || x.category === active) && (!query || [x.title, x.displayName, x.name, x.memoryKeyword, x.hint, x.description, x.category, ...(x.tags || [])].join(' ').toLocaleLowerCase().includes(query))); if (nearbyMode && userLocation) list = list.filter(x => x.location?.lat && x.location?.lng).map(x => ({ ...x, distance: distanceKm(userLocation, x.location) })).filter(x => x.distance <= nearbyRadiusKm).sort((a, b) => a.distance - b.distance); return list; }
 function pointFeature(item) { const point = displayLocation(item); return { type: 'Feature', geometry: { type: 'Point', coordinates: [Number(point.lng), Number(point.lat)] }, properties: { id: item.id, name: item.name || item.title, category: item.category, color: categoryColor(item.category) } }; }
 function initGlobe() {
-  if (globeMap || !window.maplibregl) return;
-  globeMap = new maplibregl.Map({ container: 'globe', center: [101, 14], zoom: 4.05, minZoom: 1.2, maxZoom: 18, pitch: 0, bearing: 0, attributionControl: false, style: { version: 8, sources: {}, layers: [{ id: 'ocean', type: 'background', paint: { 'background-color': '#b8d5c9' } }] } });
-  globeMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+  if (globeMap || !window.maplibregl || !window.FLAT_MAP_CONFIG) return;
+  const FM = window.FLAT_MAP_CONFIG, B = FM.bounds;
+  const style = {
+    version: 8,
+    sources: {
+      osm: {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256, maxzoom: 19,
+        attribution: '© OpenStreetMap contributors (ODbL)'
+      }
+    },
+    layers: [
+      { id: 'paper', type: 'background', paint: { 'background-color': '#eaf1e6' } },
+      { id: 'osm-colour', type: 'raster', source: 'osm', paint: { 'raster-opacity': 1, 'raster-saturation': -0.06, 'raster-contrast': 0.03 } }
+    ]
+  };
+  globeMap = new maplibregl.Map({
+    container: 'globe', center: [FM.center.lng, FM.center.lat], zoom: 9.4,
+    minZoom: 8.2, maxZoom: 18, pitch: 0, bearing: 0,
+    attributionControl: false, style
+  });
+  globeMap.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
+  globeMap.addControl(new maplibregl.ScaleControl({ maxWidth: 130, unit: 'metric' }), 'bottom-left');
   globeMap.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   globeMap.on('load', () => {
-    globeMap.setProjection({ type: 'globe' });
-    globeMap.addSource('thailand', { type: 'geojson', data: '/thailand.geo.json' });
-    globeMap.addLayer({ id: 'thailand-shadow', type: 'fill', source: 'thailand', paint: { 'fill-color': '#f2d38b', 'fill-opacity': .32, 'fill-outline-color': '#fff8e7' } });
-    globeMap.addLayer({ id: 'thailand-fill', type: 'fill', source: 'thailand', paint: { 'fill-color': '#e9b95e', 'fill-opacity': .88 } });
-    globeMap.addLayer({ id: 'thailand-outline', type: 'line', source: 'thailand', paint: { 'line-color': '#fff8e7', 'line-width': 2.5, 'line-opacity': .95 } });
-    $('#globe').dataset.background = 'thailand';
+    // 本地拼接的 OSM 彩色底图作为兜底：外网瓦片不可用或加载中时，地图依然是清迈彩色平面图
+    if (FM.basemap?.corners) {
+      globeMap.addSource('local-basemap', { type: 'image', url: '/assets/chiang-mai-basemap.png', coordinates: FM.basemap.corners });
+      globeMap.addLayer({ id: 'local-basemap', type: 'raster', source: 'local-basemap', paint: { 'raster-opacity': 1, 'raster-fade-duration': 0 } }, 'osm-colour');
+    }
+    const frame = [[B.west, B.north], [B.east, B.north], [B.east, B.south], [B.west, B.south], [B.west, B.north]];
+    globeMap.addSource('flat-frame', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: frame }, properties: {} } });
+    globeMap.addLayer({ id: 'flat-frame-halo', type: 'line', source: 'flat-frame', paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': .85 } });
+    globeMap.addLayer({ id: 'flat-frame-line', type: 'line', source: 'flat-frame', paint: { 'line-color': '#173f36', 'line-width': 3 } });
+
+    const cos = Math.cos(FM.center.lat * Math.PI / 180), ring = [];
+    for (let step = 0; step <= 90; step++) {
+      const a = step / 90 * Math.PI * 2;
+      ring.push([FM.center.lng + FM.halfKm / (111.32 * cos) * Math.cos(a), FM.center.lat + FM.halfKm / 111.32 * Math.sin(a)]);
+    }
+    globeMap.addSource('flat-radius', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: ring }, properties: {} } });
+    globeMap.addLayer({ id: 'flat-radius-line', type: 'line', source: 'flat-radius', paint: { 'line-color': '#b8702f', 'line-width': 2, 'line-dasharray': [2, 2], 'line-opacity': .9 } });
+
+    globeMap.addSource('flat-centre', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [FM.center.lng, FM.center.lat] }, properties: {} } });
+    globeMap.addLayer({ id: 'flat-centre-ring', type: 'circle', source: 'flat-centre', paint: { 'circle-radius': 9, 'circle-color': '#ffffff', 'circle-stroke-color': '#173f36', 'circle-stroke-width': 3 } });
+
     globeMap.addSource('places', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    globeMap.addLayer({ id: 'category-zones', type: 'circle', source: 'places', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 7, 10, 17, 15, 28], 'circle-color': ['get', 'color'], 'circle-opacity': 0.08, 'circle-blur': 0.65 } });
+    globeMap.addLayer({ id: 'category-zones', type: 'circle', source: 'places', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 8, 6, 11, 13, 15, 26], 'circle-color': ['get', 'color'], 'circle-opacity': 0.08, 'circle-blur': 0.65 } });
     globeMap.addSource('me', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     globeMap.addSource('radius', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     globeMap.addLayer({ id: 'nearby-radius', type: 'fill', source: 'radius', paint: { 'fill-color': '#2f7d69', 'fill-opacity': 0.1, 'fill-outline-color': '#2f7d69' } });
     globeMap.addLayer({ id: 'me-halo', type: 'circle', source: 'me', paint: { 'circle-radius': 16, 'circle-color': '#2f7d69', 'circle-opacity': 0.18 } });
     globeMap.addLayer({ id: 'me-point', type: 'circle', source: 'me', paint: { 'circle-radius': 7, 'circle-color': '#173f36', 'circle-stroke-color': '#fff', 'circle-stroke-width': 3 } });
     ['dragstart', 'zoomstart'].forEach(name => globeMap.on(name, () => document.querySelectorAll('.globe-hint').forEach(hint => hint.classList.add('used'))));
+    flatMapReadyHook();
     globeReady = true; render(); focusLocations(filteredItems());
   });
 }
+
+// 平面地图：四边方向标注 + 50km 之外的地点
+let outsideMarkers = [];
+function flatMapReadyHook() { updateMapEdges(); }
+
+function updateMapEdges() {
+  if (!window.FLAT_MAP_CONFIG) return;
+  const FM = window.FLAT_MAP_CONFIG, d = FM.directions[language] || FM.directions.zh;
+  const set = (id, text) => { const el = $(id); if (el) el.textContent = text; };
+  set('#edgeN', `${d.N} · ${FM.bounds.north.toFixed(4)}°`);
+  set('#edgeS', `${d.S} · ${FM.bounds.south.toFixed(4)}°`);
+  set('#edgeW', `${d.W} · ${FM.bounds.west.toFixed(4)}°`);
+  set('#edgeE', `${d.E} · ${FM.bounds.east.toFixed(4)}°`);
+  set('#flatMapNote', t('boundaryNote'));
+}
+
+function renderOutside() {
+  outsideMarkers.forEach(marker => marker.remove());
+  outsideMarkers = [];
+  const panel = $('#outsidePanel');
+  if (!panel || !data || !window.FLAT_MAP_CONFIG) return;
+  const FM = window.FLAT_MAP_CONFIG, B = FM.bounds;
+  const list = data.items
+    .filter(x => Number.isFinite(Number(x.location?.lat)) && Number.isFinite(Number(x.location?.lng)))
+    .map(x => ({ ...x, km: distanceKm(FM.center, x.location) }))
+    .filter(x => x.km > FM.halfKm)
+    .sort((a, b) => b.km - a.km);
+  panel.hidden = !list.length;
+  $('#outsideTitle').textContent = t('outsideTitle', { n: list.length });
+  $('#outsideLead').textContent = t('outsideLead');
+  $('#outsideList').innerHTML = list.map(x => {
+    const d = FM.directions[language] || FM.directions.zh;
+    const ns = x.location.lat > FM.center.lat ? d.N : d.S;
+    const ew = x.location.lng > FM.center.lng ? d.E : d.W;
+    const map = x.maps?.[0];
+    return `<button type="button" data-open-place="${esc(x.id)}"><strong>${esc(x.displayName || x.name || x.title)}</strong><small>${esc(ns + ew)} · ${x.km.toFixed(1)} km</small></button>${map ? '' : ''}`;
+  }).join('');
+  if (!globeReady) return;
+  list.filter(x => x.location.lat > B.north || x.location.lat < B.south || x.location.lng < B.west || x.location.lng > B.east)
+    .forEach(x => {
+      const lng = Math.max(B.west + .02, Math.min(B.east - .02, x.location.lng));
+      const lat = B.north - .015;
+      const el = document.createElement('div');
+      el.className = 'outside-marker';
+      el.textContent = `▲ ${x.displayName || x.name || x.title} · ${x.km.toFixed(1)} km`;
+      outsideMarkers.push(new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([lng, lat]).addTo(globeMap));
+    });
+}
+
 function distanceLabel(item) { if (!userLocation || !item.location) return t('distanceHint'); const km = distanceKm(userLocation, item.location); return km < 1 ? t('distanceM', { n: Math.round(km * 1000) }) : t('distanceKm', { n: km.toFixed(1) }); }
 function radiusFeature(center, radiusKm) { const coordinates = []; for (let step = 0; step <= 72; step++) { const angle = step / 72 * Math.PI * 2, latOffset = radiusKm / 111.32 * Math.sin(angle), lngOffset = radiusKm / (111.32 * Math.cos(center.lat * Math.PI / 180)) * Math.cos(angle); coordinates.push([center.lng + lngOffset, center.lat + latOffset]); } return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coordinates] }, properties: {} }; }
-function focusLocations(items) { if (!globeReady) return; const located = items.filter(x => x.location?.lat && x.location?.lng); if (!located.length) return; if (active === '全部' && !nearbyMode) { globeMap.easeTo({ center: [101, 14], zoom: 4.05, pitch: 0, duration: 900 }); return; } const bounds = new maplibregl.LngLatBounds(); located.forEach(x => { const point = displayLocation(x); bounds.extend([point.lng, point.lat]); }); if (!bounds.isEmpty()) globeMap.fitBounds(bounds, { padding: 85, maxZoom: 9.5, duration: 850 }); }
-function focusNearby() { if (!globeReady || !userLocation) return; const zoom = nearbyRadiusKm <= .2 ? 15 : nearbyRadiusKm <= .5 ? 14 : nearbyRadiusKm <= .8 ? 13.5 : nearbyRadiusKm <= 1 ? 13 : nearbyRadiusKm <= 3 ? 11.5 : nearbyRadiusKm <= 5 ? 11 : 10; globeMap.easeTo({ center: [userLocation.lng, userLocation.lat], zoom, pitch: 35, duration: 850 }); }
-function showPlacePreview(id, focus = false) { const item = data.items.find(x => x.id === id); if (!item) return; selectedPlaceId = id; document.querySelectorAll('.place-marker').forEach(marker => marker.classList.toggle('selected', marker.dataset.id === id)); const preview = $('#placePreview'), meta = categoryMeta(item.category); preview.hidden = false; $('#globeStage').classList.add('has-preview'); preview.innerHTML = `<span class="preview-category" style="--category-color:${categoryColor(item.category)}">${meta.icon} ${esc(meta.short)} · ${esc(item.category)}</span><h3>${esc(item.name || item.title)}</h3><p>${esc(item.hint && item.hint !== item.name ? item.hint : t('fullGuide'))}</p><div><strong>${esc(distanceLabel(item))}</strong><button type="button" data-open-place="${esc(item.id)}">${esc(t('openNow'))}</button></div>`; preview.dataset.openPlace = item.id; if (focus && item.location) { const point = displayLocation(item); globeMap?.easeTo({ center: [point.lng, point.lat], zoom: Math.max(globeMap.getZoom(), 8.5), duration: 650 }); } }
+function focusLocations(items) { if (!globeReady || !window.FLAT_MAP_CONFIG) return; const FM = window.FLAT_MAP_CONFIG; const located = items.filter(x => x.location?.lat && x.location?.lng); if (!located.length) return; if (active === '全部' && !nearbyMode && !$('#search').value.trim()) { globeMap.fitBounds([[FM.bounds.west, FM.bounds.south], [FM.bounds.east, FM.bounds.north]], { padding: 14, duration: 900 }); return; } const bounds = new maplibregl.LngLatBounds(); located.forEach(x => { const point = displayLocation(x); bounds.extend([point.lng, point.lat]); }); if (!bounds.isEmpty()) globeMap.fitBounds(bounds, { padding: 85, maxZoom: 13, duration: 850 }); }
+function focusNearby() { if (!globeReady || !userLocation) return; const zoom = nearbyRadiusKm <= .2 ? 15 : nearbyRadiusKm <= .5 ? 14 : nearbyRadiusKm <= .8 ? 13.5 : nearbyRadiusKm <= 1 ? 13 : nearbyRadiusKm <= 3 ? 11.5 : nearbyRadiusKm <= 5 ? 11 : 10; globeMap.easeTo({ center: [userLocation.lng, userLocation.lat], zoom, pitch: 0, duration: 850 }); }
+function showPlacePreview(id, focus = false) { const item = data.items.find(x => x.id === id); if (!item) return; selectedPlaceId = id; document.querySelectorAll('.place-marker').forEach(marker => marker.classList.toggle('selected', marker.dataset.id === id)); const preview = $('#placePreview'), meta = categoryMeta(item.category); preview.hidden = false; $('#globeStage').classList.add('has-preview'); preview.innerHTML = `<span class="preview-category" style="--category-color:${categoryColor(item.category)}">${meta.icon} ${esc(meta.short)} · ${esc(item.category)}</span><h3>${esc(item.name || item.title)}</h3><p>${esc(item.hint && item.hint !== item.name ? item.hint : t('fullGuide'))}</p><div><strong>${esc(distanceLabel(item))}</strong><button type="button" data-open-place="${esc(item.id)}">${esc(t('openNow'))}</button></div>`; preview.dataset.openPlace = item.id; if (focus && item.location) { const point = displayLocation(item); globeMap?.easeTo({ center: [point.lng, point.lat], zoom: Math.max(globeMap.getZoom(), 12.5), duration: 650 }); } }
 function renderMarkers(items) { globeMarkers.forEach(marker => marker.remove()); globeMarkers = []; if (!globeReady) return; items.forEach(item => { const meta = categoryMeta(item.category), point = displayLocation(item), element = document.createElement('button'), line = `${meta.icon} ${meta.short} · ${item.name || item.title}`; element.type = 'button'; element.className = `place-marker${line.length > 15 ? ' marquee' : ''}`; element.dataset.id = item.id; element.style.setProperty('--marker-color', categoryColor(item.category)); element.setAttribute('aria-label', `${meta.short}，${item.name || item.title}，点击选中`); element.innerHTML = `<span class="marker-line"><span>${esc(line)}</span>${line.length > 15 ? `<span aria-hidden="true">${esc(line)}</span>` : ''}</span>`; element.onclick = event => { event.stopPropagation(); showPlacePreview(item.id); }; const marker = new maplibregl.Marker({ element, anchor: 'center' }).setLngLat([point.lng, point.lat]).addTo(globeMap); globeMarkers.push(marker); }); }
 function scheduleAutoTour(list = filteredItems()) { clearInterval(autoTourTimer); clearTimeout(autoTourDelay); if (!autoTourEnabled || viewMode !== 'globe') return; const located = list.filter(item => item.location?.lat && item.location?.lng); if (!located.length) return; autoTourIndex %= located.length; const advance = () => { if ($('#detail').open || $('#adminDialog').open || document.hidden) return; showPlacePreview(located[autoTourIndex % located.length].id, false); autoTourIndex = (autoTourIndex + 1) % located.length; }; autoTourDelay = setTimeout(advance, 700); autoTourTimer = setInterval(advance, 4200); }
 function renderGlobe(list) {
@@ -109,6 +199,7 @@ function renderGlobe(list) {
   $('#globeLegend').innerHTML = shownCategories.map(category => { const meta = categoryMeta(category), selected = category === active; return `<button type="button" data-legend-cat="${esc(category)}" class="${selected ? 'active' : ''}" title="${selected ? '再点一次取消筛选' : `只看${meta.short}`}"><i style="--category-color:${categoryColor(category)}">${meta.icon}</i>${esc(meta.short)}${selected ? '<b>×</b>' : ''}</button>`; }).join('');
   $('#unlocatedPanel').hidden = !unlocated.length; $('#unlocatedList').innerHTML = unlocated.slice(0, 40).map(item => `<button type="button" data-open-place="${esc(item.id)}">${esc(item.name || item.title)}<small>${esc(item.category)}</small></button>`).join('');
   if (selectedPlaceId && !list.some(x => x.id === selectedPlaceId)) { selectedPlaceId = null; $('#placePreview').hidden = true; $('#globeStage').classList.remove('has-preview'); }
+  renderOutside();
 }
 function tagChips(item) { return `<div class="tag-chips">${(item.tags?.length ? item.tags : [categoryMeta(item.category).short]).slice(0, 2).map(tag => `<span>${esc(tag)}</span>`).join('')}</div>`; }
 function renderList(list) { $('#cards').innerHTML = list.map(item => `<article class="card" data-open-place="${esc(item.id)}" tabindex="0">${item.cover ? `<img data-place-image class="card-cover" src="${esc(item.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}<div class="card-body">${tagChips(item)}<h2>${esc(item.displayName || item.name || item.title)}</h2>${item.community ? `<small class="contributor-line">${esc(item.contributor?.name ? t('sharedBy', { name: item.contributor.name }) : t('friendShared'))}</small>` : ''}<p>${esc(item.memoryKeyword || (item.hint && item.hint !== item.name ? item.hint : item.description) || t('fullGuide'))}</p><div class="meta"><span>${esc(distanceLabel(item))}</span><span>${esc(t('viewDetail'))}</span></div></div></article>`).join(''); }

@@ -1,0 +1,35 @@
+{
+  "center": {
+    "lng": 98.9853,
+    "lat": 18.7883
+  },
+  "halfKm": 50,
+  "bounds": {
+    "west": 98.51086411946277,
+    "east": 99.45973588053722,
+    "south": 18.339144412504492,
+    "north": 19.237455587495507
+  },
+  "zoom": 11,
+  "tileSize": 256,
+  "tileRange": {
+    "x0": 1584,
+    "x1": 1589,
+    "y0": 912,
+    "y1": 917,
+    "cols": 6,
+    "rows": 6
+  },
+  "pixelSize": {
+    "width": 1536,
+    "height": 1536
+  },
+  "projection": "web-mercator",
+  "frame": {
+    "left": 405610.84424295806,
+    "right": 406992.7389037086,
+    "top": 233585.68790705022,
+    "bottom": 234967.59999814018
+  },
+  "attribution": "© OpenStreetMap contributors (ODbL)"
+}

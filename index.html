@@ -34,6 +34,14 @@
     .pains { margin-top:30px; border-left:3px solid var(--accent); padding:2px 0 2px 18px; font-size:14px; color:var(--muted); }
     .pains div { margin:4px 0; }
     .pains b { color:var(--ink); }
+    .flatmap { margin-top:32px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 2px 14px rgba(23,63,54,.07); }
+    .flatmap h2 { font-size:19px; margin:0 0 4px; }
+    .flatmap .sub { font-size:13px; color:var(--muted); margin:0 0 14px; }
+    .flatmap .grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; }
+    .flatmap img { width:100%; display:block; border-radius:10px; border:1px solid var(--line); }
+    .flatmap ul { margin:0; padding-left:18px; font-size:13.5px; color:#3d4a43; }
+    .flatmap li { margin:7px 0; }
+    @media (max-width:760px){ .flatmap .grid { grid-template-columns:1fr; } }
     footer { border-top:1px solid var(--line); margin-top:36px; padding:20px 0 34px; font-size:12.5px; color:var(--muted); }
     footer a { color:var(--ink2); }
     .links { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:8px; }
@@ -59,12 +67,12 @@
     <a class="card primary" href="demo/">
       <div class="k">No account needed</div>
       <h2>公开只读演示 →</h2>
-      <p>直接体验全文搜索、分类筛选、中英日泰切换、列表与地图视图。150 个地点、26 个分类，数据来自仓库公开快照。</p>
+      <p>直接体验全文搜索、分类筛选、中英日泰切换、列表与清迈平面地图（50 公里边界、东南西北、真实坐标）。150 个地点、26 个分类，数据来自仓库公开快照。</p>
     </a>
     <a class="card" href="https://cm.caishen.today" target="_blank" rel="noopener">
       <div class="k">Live example site</div>
       <h2>完整示例网站 ↗</h2>
-      <p>cm.caishen.today — 线上正式版本，含登录、投稿、星级、附近筛选与交互式地球视图。需要账户。</p>
+      <p>cm.caishen.today — 线上正式版本，含登录、投稿、星级、附近筛选与 MapLibre 交互式清迈平面地图。需要账户。</p>
     </a>
     <a class="card" href="https://github.com/zixiang2008/favoriteManual#readme" target="_blank" rel="noopener">
       <div class="k">Documentation</div>
@@ -77,8 +85,26 @@
     <div><b>痛点 1</b>：谷歌地图上标记的站点查找起来非常麻烦，图钉密密麻麻，缩放拖动靠记忆辨认，也不够直观。</div>
     <div><b>痛点 2</b>：没有搜索功能——搜不到自己写下的备注、标签与自定义分类；也无法按距离、类别组合筛选。</div>
     <div><b>痛点 3</b>：语言单一，满足不了中文、英文、泰文、日文读者的多语言需求。</div>
-    <div><b>网页版</b>：全文搜索、26 个分类、200 米–10 公里附近筛选、四语界面、列表/地图双视图、社区共建与数据自持。</div>
+    <div><b>网页版</b>：全文搜索、26 个分类、200 米–10 公里附近筛选、四语界面、列表 / 清迈平面地图双视图、社区共建与数据自持。</div>
   </div>
+
+  <section class="flatmap">
+    <h2>最新：清迈平面地图 · Chiang Mai flat map · チェンマイ平面地図 · แผนที่ระนาบเชียงใหม่</h2>
+    <p class="sub">球形地球视图已替换为平面地图，地点落在真实经纬度上；North-up / 正北朝上 / 北が上 / หันเหนือขึ้นด้านบน。</p>
+    <div class="grid">
+      <img src="docs/screenshots/flat-map-detail-zh.png" alt="清迈平面地图：50 公里边界、东南西北、彩色地点标记">
+      <ul>
+        <li><b>多色彩底图</b>：OpenStreetMap 瓦片拼接，道路、平河、素贴山、绿地、公路清晰可辨；本地拼接图作为离线兜底。</li>
+        <li><b>明确边界</b>：以老城中心 98.9853°E / 18.7883°N 为原点，上下左右各 50 公里（100 × 100 km），四边标出经纬度。</li>
+        <li><b>东南西北</b>：罗盘、公里比例尺、50 km 虚线半径圆；方位标签随中 / 英 / 日 / 泰切换。</li>
+        <li><b>真实坐标</b>：137 个地点按真实经纬度落点，取消旧版球形视图的装饰性聚簇偏移。</li>
+        <li><b>界外标注</b>：3 个超过 50 km 的地点列入侧栏，2 个落在方框外的用 ▲ 标在北边界，信息不丢失。</li>
+        <li>English: multi-colour OSM basemap, a 50 km square boundary, compass and scale, true coordinates, and ▲ markers for places beyond the boundary.</li>
+        <li>日本語：カラーの OSM 背景地図、50 km の境界、コンパスと縮尺、実座標、境界外は ▲ で表示します。</li>
+        <li>ไทย: แผนที่พื้นหลังสี OSM ขอบสี่เหลี่ยม 50 กม. เข็มทิศ มาตราส่วน พิกัดจริง และ ▲ สำหรับจุดนอกขอบ</li>
+      </ul>
+    </div>
+  </section>
 
   <div class="langs">
     <div class="lang">
@@ -87,15 +113,15 @@
     </div>
     <div class="lang">
       <h3>English</h3>
-      <p>Saved pins were tedious to scan and impossible to search over your own notes, with only one language. The web version adds full-text search, category and distance filters, four-language UI, list and globe views, community contributions and self-owned data. <a href="https://github.com/zixiang2008/favoriteManual#readme">Read the full guide ↗</a></p>
+      <p>Saved pins were tedious to scan and impossible to search over your own notes, with only one language. The web version adds full-text search, category and distance filters, four-language UI, list view and a flat Chiang Mai map with a 50 km boundary, community contributions and self-owned data. <a href="https://github.com/zixiang2008/favoriteManual#readme">Read the full guide ↗</a></p>
     </div>
     <div class="lang">
       <h3>日本語</h3>
-      <p>Google Maps のピンは探しにくく、自分で書いたメモも検索できず、言語も 1 つだけでした。ウェブ版は全文検索、カテゴリ・距離絞り込み、4 言語、リストと地球儀ビュー、コミュニティ投稿、データの自前管理を実現します。<a href="https://github.com/zixiang2008/favoriteManual/blob/main/docs/README.ja.md">詳しい説明 ↗</a></p>
+      <p>Google Maps のピンは探しにくく、自分で書いたメモも検索できず、言語も 1 つだけでした。ウェブ版は全文検索、カテゴリ・距離絞り込み、4 言語、リストとチェンマイ平面地図（50 km の境界）、コミュニティ投稿、データの自前管理を実現します。<a href="https://github.com/zixiang2008/favoriteManual/blob/main/docs/README.ja.md">詳しい説明 ↗</a></p>
     </div>
     <div class="lang">
       <h3>ไทย</h3>
-      <p>หมุดใน Google Maps หายาก ค้นโน้ตที่เขียนเองไม่ได้ และรองรับเพียงภาษาเดียว เว็บเวอร์ชันเพิ่มการค้นหาเต็มข้อความ กรองหมวดหมู่และระยะทาง 4 ภาษา มุมมองรายการและลูกโลก การมีส่วนร่วมของชุมชน และการถือข้อมูลเอง <a href="https://github.com/zixiang2008/favoriteManual/blob/main/docs/README.th.md">อ่านรายละเอียด ↗</a></p>
+      <p>หมุดใน Google Maps หายาก ค้นโน้ตที่เขียนเองไม่ได้ และรองรับเพียงภาษาเดียว เว็บเวอร์ชันเพิ่มการค้นหาเต็มข้อความ กรองหมวดหมู่และระยะทาง 4 ภาษา มุมมองรายการและแผนที่ระนาบเชียงใหม่ (ขอบ 50 กม.) การมีส่วนร่วมของชุมชน และการถือข้อมูลเอง <a href="https://github.com/zixiang2008/favoriteManual/blob/main/docs/README.th.md">อ่านรายละเอียด ↗</a></p>
     </div>
   </div>
 </main>

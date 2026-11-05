@@ -43,7 +43,7 @@ It replaces the old workflow of "drop a pin in Google Maps + write a note in Not
 
 - 150 places in 26 categories, searchable and filterable in the browser;
 - instant switching between Chinese, English, Japanese and Thai;
-- a list view and an interactive globe/map view;
+- a list view and an interactive Chiang Mai flat-map view;
 - category filters and nearby ranges from 200 m to 10 km;
 - Google Maps enrichment merged into each place card (address, opening hours, phone, website, photos);
 - community submissions, star ratings and shared editing by administrators and co-administrators;
@@ -120,7 +120,7 @@ The idea is not "build another map", but **turn a collection into structured, se
 | Collect | Notion remains the single intake tool, preserving the habit of writing free-form notes |
 | Structure | A scheduled one-way sync splits notes into fields: name, area hint, category, sub-category, tags, coordinates, map links |
 | Enrich | A Google Maps cache adds address, phone, opening hours, website, photos and a canonical place link |
-| Present | A Node.js service merges data at request time and serves a mobile PWA with search, filters, list/globe views and four languages |
+| Present | A Node.js service merges data at request time and serves a mobile PWA with search, filters, list/flat-map views and four languages |
 | Co-maintain | Signed-in users submit places and award stars; administrators edit the display layer, and all community state is stored separately so sync never erases it |
 
 Key design decision: **the website never writes back to Notion**. Notion is the archive, `runtime/` is the community state layer, and administrator edits only affect display — so the next sync cannot wipe out everyone's contributions.
@@ -136,7 +136,7 @@ Key design decision: **the website never writes back to Notion**. Notion is the 
 | Search | Searches the platform's places, not your own notes and labels | Full-text search plus category, distance and keyword combinations |
 | Languages | Interface follows the system; notes and categories in one language only | Chinese / English / Japanese / Thai UI, mapped categories and labels, one-tap switching |
 | Information density | A pin shows location; the explanation is in another app | One card carries notes, category, address, hours, phone, photos and map link |
-| Views | Map only | List plus interactive globe/map, switchable without losing filters |
+| Views | Map only | List plus an interactive Chiang Mai flat map with a 50 km boundary, switchable without losing filters |
 | Nearby | Estimated by eye | Explicit 200 m to 10 km ranges |
 | Joint upkeep | Shared list is essentially read-only | Submissions, stars, co-admins, online editing, audit trail |
 | Mobile | Navigation app, no offline mode, no home-screen icon | Installable PWA, Service Worker caching, mobile-first layout |
@@ -160,6 +160,7 @@ Key design decision: **the website never writes back to Notion**. Notion is the 
 10. **Mobile-first and offline-capable.** Installable PWA with cached static assets, so the handbook still opens on a weak connection.
 11. **Data you own and can move.** Structured JSON plus sync and build scripts can be regenerated, exported and backed up at any time.
 12. **Still just a web page.** One link, no app store, no installation, consistent across iPhone, Android and desktop.
+13. **Real geography, not a globe.** A flat Chiang Mai map with a 50 km boundary, compass, scale bar and true coordinates shows where places actually are — something a globe of decorative clusters cannot do.
 
 ---
 
@@ -179,7 +180,7 @@ Key design decision: **the website never writes back to Notion**. Notion is the 
 
 | Purpose | URL | Notes |
 |---|---|---|
-| Full example site | **<https://cm.caishen.today>** | Production version with login, submissions, globe view and nearby filters; requires an account |
+| Full example site | **<https://cm.caishen.today>** | Production version with login, submissions, the Chiang Mai flat map and nearby filters; requires an account |
 | Legacy URL | <https://cm.caishen2049.us> | Same application and data, kept for links shared earlier |
 | Public read-only demo | <https://zixiang2008.github.io/favoriteManual/demo/> | No account needed; try full-text search, category filters, four-language switching and place cards, built from the public snapshot in this repository |
 
@@ -193,9 +194,32 @@ Key design decision: **the website never writes back to Notion**. Notion is the 
 
 > Place photos in the screenshots come from the public Google Maps cache and are shown for interface demonstration only.
 
-The demo is a static, read-only illustration of why the web version is easier to search and read. Login, submissions, distance filters and the interactive globe live in the full example site. **For privacy, neither the repository nor the demo contains any PIN, invitation code or login credential.**
+The demo is a static, read-only illustration of why the web version is easier to search and read. Login, submissions, distance filters and the interactive Chiang Mai flat map live in the full example site. **For privacy, neither the repository nor the demo contains any PIN, invitation code or login credential.**
 
 Demo data can be regenerated with `node scripts/build-demo-data.mjs` from `data/places.json` and `data/google-maps-cache.json`.
+
+### The Chiang Mai flat map (50 km boundary)
+
+The map view has been switched from a spherical globe to a **flat, north-up map of Chiang Mai**. Every saved place is now drawn at its real coordinates, so "inside the old town / out towards Mae Rim / far to the north" is obvious at a glance instead of being guessed from a cluster of pins on a globe.
+
+<p><img src="docs/screenshots/flat-map-detail-en.png" width="100%" alt="Chiang Mai flat map in the public read-only demo, English"></p>
+
+| Design decision | What it means |
+| --- | --- |
+| Base map | Multi-colour OpenStreetMap raster tiles (roads, the Ping River, Doi Suthep, green areas and highways are easy to tell apart), plus a locally stitched zoom-11 mosaic used as a fallback when tiles are slow or unavailable |
+| Centre and edges | Centred on the old town at `98.9853°E, 18.7883°N`; the north, south, west and east edges are each 50 km away, forming a 100 x 100 km square |
+| Edge coordinates | North `19.2375°`, south `18.3391°`, west `98.5109°`, east `99.4597°`, printed on the four sides |
+| Orientation and scale | A compass marks N / E / S / W and a metric scale bar shows kilometres; direction labels switch with the UI language |
+| Place markers | All 137 places with coordinates are projected from their **real latitude and longitude** into category-coloured dots or labels; the decorative cluster offsets of the old globe view are gone |
+| 50 km reference circle | A dashed circle shows "50 km from the centre", making it clear when a place is inside the square but outside the radius |
+| Places beyond 50 km | 3 of the 150 places are more than 50 km from the centre: `Guang` (107.5 km), `39 หมู่` (60.0 km) and `Mae Ya Waterfall` (56.6 km). The 2 that fall outside the square are marked with `▲` on the north edge with their distance; the third sits inside the square but outside the dashed circle. Nothing is lost, and the 50 km limit stays intact |
+| Search linkage | Search, category filters and the map share one result set; filtering redraws only the matching places |
+
+The production site (after login) uses a MapLibre GL flat map, while the public demo renders the same boundaries as a static SVG:
+
+<p><img src="docs/screenshots/site-flat-map-en.png" width="100%" alt="Chiang Mai flat map in the production PWA, English"></p>
+
+`scripts/build-flat-map.mjs` generates `public/flat-map-config.js` and `demo/flat-map-config.js` from the same centre, bounds, directions and basemap parameters. Run `npm run map:config` to regenerate both, so the two views can never drift apart.
 
 ---
 
@@ -203,7 +227,7 @@ Demo data can be regenerated with `node scripts/build-demo-data.mjs` from `data/
 
 - Chinese, English, Japanese and Thai mobile PWA
 - Full-text search; category, sub-category, tag and 200 m–10 km distance filters
-- List view and interactive globe/map view (MapLibre + OpenStreetMap tiles)
+- List view and interactive Chiang Mai flat map (MapLibre + OpenStreetMap raster tiles, with a stitched local mosaic as fallback)
 - 150-place snapshot across 26 categories; address, hours, phone, website, booking, photos and map links
 - Named users, 4-digit PIN, salted scrypt hashes, signed sessions, login rate limits, audit logs
 - Limited-use, revocable invitation codes
@@ -229,7 +253,7 @@ Node.js service
   + community contributions and media
   + administrator display overrides (runtime/)
   v
-Mobile PWA: search / categories / distance / list / globe / 4 languages
+Mobile PWA: search / categories / distance / list / flat map / 4 languages
   v
 Cloudflare Tunnel + HTTPS
 ```

@@ -44,3 +44,84 @@ dialog{width:min(calc(100% - 20px),720px);max-height:90vh;border:0;border-radius
 
 /* v19 shared community editor */
 .maintained-line{display:inline-flex;margin:0 0 10px;padding:5px 9px;border-radius:99px;background:#edf5ef;color:var(--green);font-size:.67rem;font-weight:800}.actions .edit-place-button{border:1px solid var(--green);border-radius:14px;padding:13px;background:#fff;color:var(--green);font-size:.82rem;font-weight:800}.actions .edit-place-button:active{transform:scale(.98)}.editor-form{padding-bottom:10px}.editor-form small{display:block}.editor-form textarea{line-height:1.55}
+
+/* v21 flat Chiang Mai map — replaces the circular globe shell */
+.globe-stage:not(:fullscreen):not(.pseudo-fullscreen) .globe-shell,
+.globe-stage:fullscreen .globe-shell,
+.globe-stage.pseudo-fullscreen .globe-shell {
+  background: #eef3e8 !important;
+  display: block !important;
+  padding: 76px 8px 54px !important;
+}
+.globe,
+.globe-stage:not(:fullscreen):not(.pseudo-fullscreen) .globe,
+.globe-stage:fullscreen .globe,
+.globe-stage.pseudo-fullscreen .globe {
+  background: #eaf1e6 url('/assets/chiang-mai-basemap.png') center / cover no-repeat !important;
+  border: 3px solid #173f36;
+  border-radius: 14px !important;
+  aspect-ratio: auto !important;
+  width: 100% !important;
+  height: min(70vh, 720px) !important;
+  min-height: 420px !important;
+  margin: 0 auto !important;
+  overflow: hidden;
+  box-shadow: 0 14px 34px rgba(23,63,54,.16) !important;
+}
+.globe-stage:fullscreen .globe,
+.globe-stage.pseudo-fullscreen .globe {
+  height: calc(100% - 130px) !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+}
+.globe .maplibregl-canvas { background: transparent; }
+.globe-heading > p { line-height: 1.35; font-size: .64rem; text-align: right; }
+#flatMapNote { display: block; margin-top: 3px; font-size: .58rem; opacity: .85; font-weight: 600; }
+.map-edges { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.map-edges .edge {
+  position: absolute; font-size: .6rem; font-weight: 800; letter-spacing: .02em;
+  color: #173f36; background: rgba(255,253,247,.93);
+  border: 1px solid rgba(23,63,54,.28); border-radius: 99px;
+  padding: 3px 10px; white-space: nowrap;
+  box-shadow: 0 2px 9px rgba(23,63,54,.13);
+}
+.edge-n { top: 80px; left: 50%; transform: translateX(-50%); }
+.edge-s { bottom: 58px; left: 50%; transform: translateX(-50%); }
+.edge-w { left: 12px; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); }
+.edge-e { right: 12px; top: 50%; transform: translate(50%, -50%) rotate(90deg); }
+.map-compass {
+  position: absolute; z-index: 6; right: 18px; bottom: 76px;
+  width: 62px; height: 62px; border-radius: 50%;
+  background: rgba(255,253,247,.93); border: 1px solid rgba(23,63,54,.35);
+  box-shadow: 0 4px 14px rgba(23,63,54,.18); pointer-events: none;
+}
+.map-compass span { position: absolute; font-size: .55rem; font-weight: 850; color: #173f36; }
+.compass-n { top: 2px; left: 50%; transform: translateX(-50%); color: #c2543f !important; }
+.compass-s { bottom: 2px; left: 50%; transform: translateX(-50%); }
+.compass-w { left: 4px; top: 50%; transform: translateY(-50%); }
+.compass-e { right: 4px; top: 50%; transform: translateY(-50%); }
+.map-compass i { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform: translate(-50%,-50%);
+  border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 18px solid #c2543f; }
+.outside-panel { border-color: rgba(194,84,63,.35); background: #fff8ee; }
+.outside-panel > div:first-child strong { color: #8d3a2c; }
+.outside-panel > div:first-child span { max-width: 62%; text-align: right; }
+.outside-panel .unlocated-list button { border-color: rgba(194,84,63,.3); }
+.outside-panel .unlocated-list button small { color: #8d3a2c; display: block; margin-top: 2px; }
+.outside-marker {
+  background: #fff8ee; border: 1px solid #c2543f; color: #8d3a2c;
+  border-radius: 99px; padding: 5px 10px; font-size: .6rem; font-weight: 800;
+  white-space: nowrap; box-shadow: 0 3px 12px rgba(23,63,54,.2);
+}
+@media(max-width:620px){
+  .globe, .globe-stage:not(:fullscreen):not(.pseudo-fullscreen) .globe { height: 62vh !important; min-height: 380px !important; }
+  .map-edges .edge { font-size: .52rem; padding: 2px 7px; }
+  .edge-n { top: 84px; }
+  .map-compass { width: 52px; height: 52px; right: 12px; bottom: 72px; }
+  .outside-panel > div:first-child span { max-width: 100%; text-align: left; }
+}
+
+/* v21 tweaks: keep controls readable on the light flat basemap */
+.recenter-globe { left: 16px !important; top: auto !important; bottom: 150px !important; transform: none !important; width: 58px !important; height: 58px !important; box-shadow: 0 6px 18px rgba(23,63,54,.22) !important; }
+.recenter-globe span { font-size: 1.3rem !important; }
+.globe-hint { color: #173f36 !important; text-shadow: 0 1px 3px #fff !important; }
+.globe-hint span { background: rgba(255,253,247,.92) !important; color: #173f36 !important; }

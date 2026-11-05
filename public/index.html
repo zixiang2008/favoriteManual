@@ -7,8 +7,9 @@
   <meta name="description" content="财绅的清迈生活手册">
   <link rel="canonical" href="https://cm.caishen.today/">
   <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/vendor/maplibre/maplibre-gl.css">
-  <link rel="stylesheet" href="/styles.css?v=17">
+  <link rel="stylesheet" href="/styles.css?v=22">
   <title>清迈生活手册</title>
 </head>
 <body>
@@ -80,17 +81,24 @@
     <nav id="categories" aria-label="分类"></nav>
     <section class="summary"><p><span id="count">0</span> <span data-i18n="savedPlaces">个收藏地点</span></p><p id="updated"></p></section>
     <div class="view-switch" role="group" aria-label="展示方式">
-      <button type="button" data-view="globe" class="active" aria-pressed="true"><span>◎</span> <span data-i18n="globeMode">地球模式</span></button>
+      <button type="button" data-view="globe" class="active" aria-pressed="true"><span>◎</span> <span data-i18n="globeMode">平面地图</span></button>
       <button type="button" data-view="list" aria-pressed="false"><span>☷</span> <span data-i18n="listMode">列表模式</span></button>
     </div>
     <section id="globeView">
     <div id="globeStage" class="globe-stage">
-    <section class="globe-shell" aria-label="地点地球地图">
+    <section class="globe-shell" aria-label="清迈平面地图（上下左右各 50 公里）">
       <div class="globe-heading">
         <div><p class="eyebrow">EXPLORE CHIANG MAI</p><h2 data-i18n="mapTitle">清迈有趣推荐By财绅</h2></div>
-        <p><span id="mappedCount">0</span> 个已定位 · <span id="unmappedCount">0</span> 个待定位</p>
+        <p><span id="mappedCount">0</span> 个已定位 · <span id="unmappedCount">0</span> 个待定位<br><span id="flatMapNote">以清迈市中心为中心 · 上下左右各 50 公里</span></p>
       </div>
       <div id="globe" class="globe"></div>
+      <div class="map-edges" aria-hidden="true">
+        <span class="edge edge-n" id="edgeN">北 · 19.2375°</span>
+        <span class="edge edge-s" id="edgeS">南 · 18.3391°</span>
+        <span class="edge edge-w" id="edgeW">西 · 98.5109°</span>
+        <span class="edge edge-e" id="edgeE">东 · 99.4597°</span>
+      </div>
+      <div class="map-compass" aria-hidden="true"><span class="compass-n">N</span><span class="compass-s">S</span><span class="compass-w">W</span><span class="compass-e">E</span><i></i></div>
       <div class="globe-hint globe-hint-left" aria-hidden="true"><b>☝</b><span>向右滑</span></div>
       <div class="globe-hint globe-hint-right" aria-hidden="true"><b>☝</b><span>向左滑</span></div>
       <div class="globe-hint globe-hint-zoom" aria-hidden="true"><b>↔</b><span>双指缩放</span></div>
@@ -108,6 +116,10 @@
       <div><strong>未定位地点</strong><span>仍可直接进入查看完整手册</span></div>
       <div id="unlocatedList" class="unlocated-list"></div>
     </section>
+    <section id="outsidePanel" class="unlocated-panel outside-panel" hidden>
+      <div><strong id="outsideTitle">50 公里之外（3）</strong><span id="outsideLead">这些地点距市中心超过 50 公里。</span></div>
+      <div id="outsideList" class="unlocated-list"></div>
+    </section>
     </section>
     <section id="listView" class="list-view" hidden aria-label="地点列表">
       <div id="cards" class="cards"></div>
@@ -119,6 +131,7 @@
   <dialog id="shareDialog" class="share-dialog"><button id="closeShare" class="dialog-close" aria-label="关闭">×</button><div id="shareBody"></div></dialog>
   <dialog id="adminDialog" class="admin-dialog"><button id="closeAdmin" class="dialog-close" aria-label="关闭">×</button><div id="adminBody"></div></dialog>
   <script src="/vendor/maplibre/maplibre-gl.js"></script>
-  <script type="module" src="/app.js?v=20"></script>
+  <script src="/flat-map-config.js?v=22"></script>
+  <script type="module" src="/app.js?v=22"></script>
 </body>
 </html>
