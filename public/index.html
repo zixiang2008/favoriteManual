@@ -9,7 +9,7 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/vendor/maplibre/maplibre-gl.css">
-  <link rel="stylesheet" href="/styles.css?v=23">
+  <link rel="stylesheet" href="/styles.css?v=24">
   <title>清迈生活手册</title>
 </head>
 <body>
@@ -84,11 +84,22 @@
       <button type="button" data-view="globe" class="active" aria-pressed="true"><span>◎</span> <span data-i18n="globeMode">平面地图</span></button>
       <button type="button" data-view="list" aria-pressed="false"><span>☷</span> <span data-i18n="listMode">列表模式</span></button>
     </div>
+
+    <!-- 插画导览地图的受控操作条：不提供自由拖动 / 缩放，只提供这几个明确选项 -->
+    <div class="guide-bar" id="guideBar" aria-label="导览地图选项">
+      <button id="backToList" type="button" class="guide-chip guide-chip-all"><span>☷</span><span data-i18n="backAll">返回所有列表</span></button>
+      <button id="snapCoffee" type="button" class="guide-chip guide-chip-coffee"><span>☕</span><span data-i18n="snapCoffee">最近的咖啡馆</span></button>
+      <label class="guide-chip guide-chip-select"><span class="guide-chip-label" data-i18n="nearbyCategory">这附近看什么</span>
+        <select id="nearbyCategory" aria-label="Nearby category"><option value="" data-i18n="allCategories">所有类别</option></select>
+      </label>
+      <span id="focusNote" class="guide-note" data-i18n="guideHint">地图自动聚焦到最近的咖啡馆，无需拖动或缩放</span>
+    </div>
+
     <section id="globeView">
     <div id="globeStage" class="globe-stage">
-    <section class="globe-shell" aria-label="清迈平面地图（上下左右各 50 公里）">
+    <section class="globe-shell" aria-label="清迈插画导览地图（上下左右各 50 公里）">
       <div class="globe-heading">
-        <div><p class="eyebrow">EXPLORE CHIANG MAI</p><h2 data-i18n="mapTitle">清迈有趣推荐By财绅</h2></div>
+        <div><p class="eyebrow">EXPLORE CHIANG MAI</p><h2 data-i18n="guideTitle">清迈地图介绍</h2></div>
         <p><span id="mappedCount">0</span> 个已定位 · <span id="unmappedCount">0</span> 个待定位<br><span id="flatMapNote">以清迈市中心为中心 · 上下左右各 50 公里</span></p>
       </div>
       <div id="globe" class="globe"></div>
@@ -99,12 +110,8 @@
         <span class="edge edge-e" id="edgeE">东 · 99.4597°</span>
       </div>
       <div class="map-compass" aria-hidden="true"><span class="compass-n">N</span><span class="compass-s">S</span><span class="compass-w">W</span><span class="compass-e">E</span><i></i></div>
-      <div class="globe-hint globe-hint-left" aria-hidden="true"><b>☝</b><span>向右滑</span></div>
-      <div class="globe-hint globe-hint-right" aria-hidden="true"><b>☝</b><span>向左滑</span></div>
-      <div class="globe-hint globe-hint-zoom" aria-hidden="true"><b>↔</b><span>双指缩放</span></div>
-      <button id="recenterGlobe" class="recenter-globe" type="button" aria-label="回到中心位置" title="回到中心位置"><span>⌾</span><small>回到中心</small></button>
+      <button id="recenterGlobe" class="recenter-globe" type="button" aria-label="回到全图" title="回到全图"><span>⌾</span><small data-i18n="recenter">回到全图</small></button>
       <div class="globe-actions">
-        <button id="autoTourButton" type="button" class="active" aria-pressed="true"><span>▶</span> <span data-i18n="autoTour">自动轮播</span></button>
         <button id="fullscreenGlobe" type="button"><span>⛶</span> <span data-i18n="fullscreen">全屏地图</span></button>
       </div>
       <button id="exitFullscreen" class="exit-fullscreen" type="button" aria-label="退出全屏">× <span data-i18n="exitFullscreen">退出全屏</span></button>
@@ -131,7 +138,8 @@
   <dialog id="shareDialog" class="share-dialog"><button id="closeShare" class="dialog-close" aria-label="关闭">×</button><div id="shareBody"></div></dialog>
   <dialog id="adminDialog" class="admin-dialog"><button id="closeAdmin" class="dialog-close" aria-label="关闭">×</button><div id="adminBody"></div></dialog>
   <script src="/vendor/maplibre/maplibre-gl.js"></script>
-  <script src="/flat-map-config.js?v=23"></script>
-  <script type="module" src="/app.js?v=23"></script>
+  <script src="/flat-map-config.js?v=24"></script>
+  <script src="/guide-config.js?v=24"></script>
+  <script type="module" src="/app.js?v=24"></script>
 </body>
 </html>

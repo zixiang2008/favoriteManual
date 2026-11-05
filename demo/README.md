@@ -1,6 +1,6 @@
 # Public read-only demo / 公开只读演示 / 公開デモ / เดโมสาธารณะ
 
-`index.html` in this directory is a **static, read-only preview** of the Manual web handbook. It exists so that anyone can experience the improvements over scattered Google Maps pins — full-text search, category filters, four-language switching, readable place cards and the **Chiang Mai flat map** — **without an account**.
+`index.html` in this directory is a **static, read-only preview** of the Manual web handbook. It exists so that anyone can experience the improvements over scattered Google Maps pins — full-text search, category filters, four-language switching, readable place cards and the **illustrated Chiang Mai guide map** — **without an account**.
 
 | | |
 |---|---|
@@ -8,11 +8,28 @@
 | This demo on GitHub Pages | <https://zixiang2008.github.io/favoriteManual/demo/> |
 | Documentation | [English](../README.md) · [简体中文](../docs/README.zh-CN.md) · [日本語](../docs/README.ja.md) · [ไทย](../docs/README.th.md) |
 
-**中文**：本目录是网页版的静态只读演示，用来直观展示「可搜索、可筛选、四语切换、清迈平面地图」相对于 Google Maps 图钉的改进。完整功能（登录、投稿、距离筛选、MapLibre 交互式平面地图）请访问 <https://cm.caishen.today>。
+**中文**：本目录是网页版的静态只读演示，用来直观展示「可搜索、可筛选、四语切换、插画导览地图」相对于 Google Maps 图钉的改进。完整功能（登录、投稿、距离筛选、MapLibre 交互式版本）请访问 <https://cm.caishen.today>。
 
-**日本語**：このディレクトリはウェブ版の静的な読み取り専用デモです。検索・絞り込み・4 言語切替・チェンマイ平面地図を、アカウントなしで体験できます。完全版は <https://cm.caishen.today> です。
+**日本語**：このディレクトリはウェブ版の静的な読み取り専用デモです。検索・絞り込み・4 言語切替・イラスト案内地図を、アカウントなしで体験できます。完全版は <https://cm.caishen.today> です。
 
-**ไทย**：ไดเรกทอรีนี้เป็นเดโมแบบคงที่ อ่านอย่างเดียว เพื่อให้เห็นการค้นหา การกรอง การสลับ 4 ภาษา และแผนที่ระนาบเชียงใหม่โดยไม่ต้องใช้บัญชี เว็บฉบับเต็มอยู่ที่ <https://cm.caishen.today>
+**ไทย**：ไดเรกทอรีนี้เป็นเดโมแบบคงที่ อ่านอย่างเดียว เพื่อให้เห็นการค้นหา การกรอง การสลับ 4 ภาษา และแผนที่นำเที่ยวแบบภาพประกอบโดยไม่ต้องใช้บัญชี เว็บฉบับเต็มอยู่ที่ <https://cm.caishen.today>
+
+## The illustrated guide map / 插画导览地图 / イラスト案内地図 / แผนที่นำเที่ยวแบบภาพประกอบ
+
+The map view behaves like a printed travel-guide spread: a paper-toned basemap, soft translucent district colours (Nimman, Chang Phueak, the old city, Night Bazaar, the mountain side), oversized landmark lettering with a white halo, and pictogram decorations.
+
+Free roaming is disabled — no drag, scroll zoom, rotate, double-click zoom, box zoom or keyboard panning. The camera only moves through four explicit controls:
+
+| Control | What it does |
+| --- | --- |
+| Back to all places | Clears the snap and every filter, returns to the list |
+| Nearest café | Re-snaps to the closest café at any time |
+| What to see nearby | Category filter within 3 km of the snapped point, plus "All categories" |
+| Whole map | The 50 km boundary view with compass, scale bar and beyond-50 km markers |
+
+Opening the map snaps to the café closest to the city centre and zooms to old-town level, so nothing has to be dragged into place. The illustrated layer is hidden at the 50 km overview so the district lettering never piles up.
+
+中文：地图按印刷版旅游导览图来画——米白纸感底图、半透明柔和色块、白描边大号地标、图标装饰。自由拖动、滚轮缩放、旋转、双击缩放、框选缩放与键盘平移全部关闭，镜头只通过四个选项移动：返回所有列表、最近的咖啡馆、这附近看什么（3 公里内分类）、回到全图（50 公里边界）。进入地图会自动吸附到最近的咖啡馆并推近到老城尺度；50 公里全图时收起插画层，避免大字挤在一起。
 
 ## The flat map / 清迈平面地图 / チェンマイ平面地図 / แผนที่ระนาบเชียงใหม่
 
@@ -27,6 +44,7 @@ The map view is a **flat, north-up Chiang Mai map**, not a globe. It uses a mult
 - `index.html` — single-file UI (no build step, no framework, no external CSS/JS)
 - `data.js` — generated dataset: 150 places, 26 categories, four-language category labels
 - `flat-map-config.js` — generated shared map config (centre, bounds, directions, basemap corners)
+- `guide-config.js` — generated shared guide overlay: district polygons (GeoJSON), four-language landmark labels, pictograms and snap parameters
 - `assets/chiang-mai-basemap.png` — stitched zoom-11 OpenStreetMap mosaic used as the map background
 - `../chiang-mai-basemap.json` — tile range, pixel frame and attribution of that mosaic
 
@@ -50,11 +68,12 @@ Private long notes (`memoryKeyword`, `description`, `blocks`), `runtime/` state,
 From the repository root:
 
 ```bash
-node scripts/build-demo-data.mjs   # or: npm run demo:build
-node scripts/build-flat-map.mjs    # or: npm run map:config
+node scripts/build-demo-data.mjs     # or: npm run demo:build
+node scripts/build-flat-map.mjs      # or: npm run map:config
+node scripts/build-guide-config.mjs  # or: npm run guide:config
 ```
 
-`build-flat-map.mjs` writes both `demo/flat-map-config.js` and `public/flat-map-config.js` from the same parameters, so the demo and the production PWA always agree on the centre, the 50 km boundary and the compass labels.
+`build-flat-map.mjs` writes both `demo/flat-map-config.js` and `public/flat-map-config.js` from the same parameters, so the demo and the production PWA always agree on the centre, the 50 km boundary and the compass labels. `build-guide-config.mjs` does the same for `guide-config.js` (district colours, landmark labels, pictograms, snap radius), and verifies the two output files are byte-identical.
 
 Then open `demo/index.html` directly in a browser (it loads `data.js` with a plain script tag, so `file://` works), or serve the directory with any static server. On GitHub Pages it is published from the `main` branch at `/favoriteManual/demo/`; the root `.nojekyll` file keeps the directory served as-is.
 

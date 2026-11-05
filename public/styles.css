@@ -125,3 +125,137 @@ dialog{width:min(calc(100% - 20px),720px);max-height:90vh;border:0;border-radius
 .recenter-globe span { font-size: 1.3rem !important; }
 .globe-hint { color: #173f36 !important; text-shadow: 0 1px 3px #fff !important; }
 .globe-hint span { background: rgba(255,253,247,.92) !important; color: #173f36 !important; }
+
+/* v24 — illustrated travel-guide map
+   Style reference: mamahuhu.blog chiang-mai-map.webp
+   Pale paper basemap, soft translucent district blobs, oversized landmark
+   lettering, pictogram pins, and a control bar instead of free pan/zoom. */
+.guide-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 9px;
+  margin: 0 0 12px; padding: 10px 12px;
+  background: linear-gradient(120deg, #fffaf0, #f2f6ec);
+  border: 1px solid #e5ddc7; border-radius: 18px;
+  box-shadow: 0 6px 20px rgba(35,57,48,.06);
+  /* 吸顶搜索栏高度由 JS 写入 --sticky-top；否则滚动后控件会被搜索栏盖住点不到 */
+  position: sticky; top: var(--sticky-top, 0px); z-index: 6;
+}
+.guide-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid rgba(23,63,54,.18); border-radius: 99px;
+  background: #fffdf7; color: #173f36; padding: 9px 14px;
+  font-size: .76rem; font-weight: 800; white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(35,57,48,.07); transition: .18s ease;
+}
+.guide-chip:hover { transform: translateY(-1px); border-color: #5c8b76; }
+.guide-chip:active { transform: scale(.97); }
+.guide-chip > span:first-child { font-size: .95rem; }
+.guide-chip-all { background: #fff4e6; border-color: #e8c99f; }
+.guide-chip-coffee { background: #eaf4f0; border-color: #a8cbbb; }
+.guide-chip-select { gap: 8px; padding: 5px 8px 5px 13px; background: #f4f1ff; border-color: #cdc4e6; }
+.guide-chip-label { font-size: .68rem; color: #6c6485; font-weight: 750; }
+.guide-chip-select select {
+  border: 0; border-radius: 99px; background: #fff; color: #3b3552;
+  padding: 6px 9px; font-size: .73rem; font-weight: 750; max-width: 190px; outline: none;
+}
+.guide-note { flex: 1 1 210px; font-size: .7rem; color: #6e7771; line-height: 1.4; }
+.guide-note.is-focus { color: #1f6b55; font-weight: 750; }
+
+/* Oversized landmark lettering with a white halo, like the reference print map */
+.globe-heading > div { background: rgba(255,253,247,.76) !important; box-shadow: 0 6px 22px rgba(34,55,48,.09) !important; }
+.globe-heading h2 {
+  font: 900 clamp(1.3rem, 3.4vw, 2rem)/1.12 "Noto Serif SC", Georgia, serif !important;
+  letter-spacing: .05em; color: #20322c;
+  text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 0 5px 14px rgba(255,255,255,.9);
+}
+.globe-heading .eyebrow { color: #b8702f !important; }
+.globe-heading > p { background: rgba(32,50,44,.76) !important; }
+
+.globe-shell,
+.globe-stage:not(:fullscreen):not(.pseudo-fullscreen) .globe-shell,
+.globe-stage:fullscreen .globe-shell,
+.globe-stage.pseudo-fullscreen .globe-shell { background: #f7f5ec !important; }
+.globe,
+.globe-stage:not(:fullscreen):not(.pseudo-fullscreen) .globe,
+.globe-stage:fullscreen .globe,
+.globe-stage.pseudo-fullscreen .globe {
+  background: #f7f5ec url('/assets/chiang-mai-basemap.png') center / cover no-repeat !important;
+  border: 3px solid #e7dcc0 !important;
+}
+.map-edges .edge { background: rgba(255,253,247,.82) !important; border-color: rgba(23,63,54,.18) !important; color: #4a6158 !important; font-weight: 700; }
+.map-compass { background: rgba(255,253,247,.82) !important; border-color: rgba(23,63,54,.2) !important; }
+.globe-hint { display: none !important; }
+
+/* Landmark text and decorative pictograms are DOM markers (no online glyph service) */
+.guide-label {
+  pointer-events: none; white-space: pre-line; text-align: center; z-index: 3;
+  font-family: "Noto Serif SC", Georgia, serif; font-weight: 900;
+  letter-spacing: .05em; line-height: 1.12; color: var(--guide-label-color, #c8322b);
+  text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 0 3px 10px rgba(255,255,255,.95);
+  transition: opacity .3s ease;
+}
+.guide-label-large { font-size: clamp(1rem, 2vw, 1.45rem); }
+.guide-label-medium { font-size: clamp(.85rem, 1.7vw, 1.2rem); }
+.guide-label-small { font-size: .7rem; font-family: inherit; font-weight: 800; }
+.guide-label-vertical { writing-mode: vertical-rl; letter-spacing: .18em; }
+.guide-icon { pointer-events: none; z-index: 3; font-size: 1.5rem; filter: drop-shadow(0 2px 3px rgba(255,255,255,.95)); transition: opacity .3s ease; }
+/* 聚焦城区时插画层是主角：大字与图标保持全不透明。
+   MapLibre 会给每个 Marker 写 inline opacity，必须用 !important 压过它。 */
+.globe.is-focused .guide-label,
+.globe.is-focused .guide-icon { opacity: 1 !important; }
+/* 50 km 全图视角：收起插画层，只留干净的彩色底图与边界 */
+.globe.is-overview .guide-label,
+.globe.is-overview .guide-icon { opacity: 0 !important; pointer-events: none; }
+
+/* Pictogram pins replace the old 138px text strips */
+.place-marker.guide-pin {
+  display: grid; place-items: center;
+  width: 34px; height: 34px; max-width: 34px; padding: 0;
+  border: 2.5px solid #fff; border-radius: 50%;
+  background: var(--marker-color); color: #fff;
+  box-shadow: 0 3px 9px rgba(23,63,54,.3), 0 0 0 1px rgba(23,63,54,.12);
+  filter: none; transform: none; backdrop-filter: none; overflow: visible;
+}
+.place-marker.guide-pin .pin-glyph { font-size: 1.05rem; line-height: 1; }
+.place-marker.guide-pin .pin-name {
+  display: none; position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
+  padding: 5px 9px; border: 1px solid rgba(23,63,54,.14); border-radius: 9px;
+  background: #fffdf7; color: #173f36; font-size: .65rem; font-weight: 800;
+  white-space: nowrap; box-shadow: 0 5px 16px rgba(23,63,54,.2);
+}
+.place-marker.guide-pin:hover .pin-name,
+.place-marker.guide-pin.selected .pin-name { display: block; }
+.place-marker.guide-pin:hover,
+.place-marker.guide-pin.selected {
+  transform: scale(1.22); z-index: 9 !important;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--marker-color) 25%, transparent), 0 6px 16px rgba(23,63,54,.3);
+}
+
+/* Recenter becomes a compact pill so the translated label always fits */
+.recenter-globe {
+  left: 16px !important; right: auto !important; top: auto !important; bottom: 150px !important;
+  transform: none !important; width: auto !important; height: auto !important;
+  min-width: 0 !important; padding: 8px 13px !important;
+  display: inline-flex !important; flex-direction: row; align-items: center; gap: 7px;
+  border-radius: 99px !important; box-shadow: 0 6px 18px rgba(23,63,54,.22) !important;
+}
+.recenter-globe span { font-size: 1.15rem !important; }
+.recenter-globe small { font-size: .62rem; font-weight: 800; white-space: nowrap; }
+.recenter-globe.rebounding { animation: guide-rebound .85s ease; }
+@keyframes guide-rebound {
+  0%, 100% { box-shadow: 0 6px 18px rgba(23,63,54,.22); }
+  40% { box-shadow: 0 0 0 8px rgba(23,63,54,.14), 0 6px 18px rgba(23,63,54,.22); }
+}
+
+@media (max-width: 620px) {
+  .guide-bar { padding: 9px; gap: 7px; }
+  .guide-chip { padding: 8px 11px; font-size: .72rem; }
+  .guide-chip-select { width: 100%; justify-content: space-between; }
+  .guide-chip-select select { max-width: 58%; }
+  .guide-note { flex-basis: 100%; }
+  .guide-label-large { font-size: 1rem; }
+  .guide-label-medium { font-size: .82rem; }
+  .guide-icon { font-size: 1.2rem; }
+  .place-marker.guide-pin { width: 28px; height: 28px; max-width: 28px; }
+  .place-marker.guide-pin .pin-glyph { font-size: .88rem; }
+  .recenter-globe { bottom: 142px !important; }
+}

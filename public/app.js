@@ -1,8 +1,9 @@
 let data = null, currentUser = null, active = '全部', nearbyMode = false, userLocation = null, nearbyRadiusKm = 3;
+let guideMode = 'overview', guideAnchor = null, guideCategory = '', guideAutoDone = false, guideDecor = [];
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const rememberedKey = 'cm-remembered-users-v1';
-let globeMap = null, globeReady = false, selectedPlaceId = null, globeMarkers = [], autoTourTimer = null, autoTourDelay = null, autoTourIndex = 0, autoTourEnabled = true;
+let globeMap = null, globeReady = false, selectedPlaceId = null, globeMarkers = [], autoTourTimer = null, autoTourDelay = null, autoTourIndex = 0, autoTourEnabled = false;
 let viewMode = localStorage.getItem('cm-view-mode') === 'list' ? 'list' : 'globe';
 let language = ['zh', 'en', 'ja', 'th'].includes(localStorage.getItem('cm-language')) ? localStorage.getItem('cm-language') : 'zh';
 const messages = {
@@ -34,8 +35,15 @@ Object.assign(messages.zh, { globeMode:'平面地图', flatMapNote:'平面地图
 Object.assign(messages.en, { globeMode:'Flat map', flatMapNote:'Flat map · 50 km from the centre on each side', outsideTitle:'Beyond 50 km ({n})', outsideLead:'These places are more than 50 km from the centre: those outside the four edges are marked with ▲ on the boundary, the rest stay inside the square but outside the dashed circle.', outsideKm:'{n} km from the centre', boundaryNote:'Centred on Chiang Mai · 50 km on each side' });
 Object.assign(messages.ja, { globeMode:'平面地図', flatMapNote:'平面地図・四辺それぞれ市中心から 50 km', outsideTitle:'50 km 圏外（{n} 件）', outsideLead:'市中心から 50 km を超える地点です。四辺の外にある地点は境界上に ▲ で示し、それ以外は枠内・破線円外にあります。', outsideKm:'市中心から {n} km', boundaryNote:'チェンマイ市中心・上下左右それぞれ 50 km' });
 Object.assign(messages.th, { globeMode:'แผนที่ระนาบ', flatMapNote:'แผนที่ระนาบ · ขอบแต่ละด้านห่างจากใจกลางเมือง 50 กม.', outsideTitle:'เกิน 50 กม. ({n} แห่ง)', outsideLead:'สถานที่เหล่านี้อยู่เกิน 50 กม. จากใจกลางเมือง โดยที่อยู่นอกขอบทั้งสี่แสดงด้วย ▲ บนขอบเขต ส่วนที่เหลืออยู่ในกรอบแต่นอกวงกลมเส้นประ', outsideKm:'ห่างจากใจกลางเมือง {n} กม.', boundaryNote:'ใจกลางเชียงใหม่ · ทุกด้าน 50 กม.' });
+
+/* v24 插画导览地图：受控聚焦，四语文案 */
+Object.assign(messages.zh, { guideTitle:'清迈地图介绍', globeMode:'导览地图', backAll:'返回所有列表', snapCoffee:'最近的咖啡馆', nearbyCategory:'这附近看什么', allCategories:'所有类别', recenter:'回到全图', guideHint:'地图自动聚焦到最近的咖啡馆，无需拖动或缩放', focusRange:'已吸附 · 3 公里内{cat}共 {n} 个地点', guideEmpty:'附近 3 公里暂无该类别地点，试试「所有类别」', snapped:'已吸附到最近的咖啡馆 {name}（{n} 公里）', coffeeMissing:'暂时没有可用坐标的咖啡馆' });
+Object.assign(messages.en, { guideTitle:'Chiang Mai Guide Map', globeMode:'Guide map', backAll:'All places', snapCoffee:'Nearest café', nearbyCategory:'What to see nearby', allCategories:'All categories', recenter:'Whole map', guideHint:'The map snaps to the nearest café — no dragging or zooming needed', focusRange:'Snapped · {n} places ({cat}) within 3 km', guideEmpty:'Nothing in this category within 3 km. Try “All categories”.', snapped:'Snapped to {name} ({n} km away)', coffeeMissing:'No café with coordinates is available yet' });
+Object.assign(messages.ja, { guideTitle:'チェンマイ案内地図', globeMode:'案内地図', backAll:'全リストへ', snapCoffee:'最寄りのカフェ', nearbyCategory:'近くで見るもの', allCategories:'すべてのカテゴリ', recenter:'全体地図', guideHint:'地図は最寄りのカフェに自動で吸着します。ドラッグやズームは不要です', focusRange:'吸着済み · 3 km 以内 {cat} {n} 件', guideEmpty:'3 km 以内にこのカテゴリはありません。「すべて」をお試しください', snapped:'{name} に吸着（{n} km）', coffeeMissing:'座標のあるカフェがまだありません' });
+Object.assign(messages.th, { guideTitle:'แผนที่นำเที่ยวเชียงใหม่', globeMode:'แผนที่นำเที่ยว', backAll:'รายการทั้งหมด', snapCoffee:'คาเฟ่ที่ใกล้ที่สุด', nearbyCategory:'ดูอะไรใกล้ ๆ นี้', allCategories:'ทุกหมวดหมู่', recenter:'แผนที่ทั้งหมด', guideHint:'แผนที่ snap ไปคาเฟ่ที่ใกล้ที่สุดโดยอัตโนมัติ ไม่ต้องลากหรือซูม', focusRange:'Snap แล้ว · 3 กม. {cat} {n} แห่ง', guideEmpty:'ไม่มีสถานที่ในหมวดนี้ภายใน 3 กม. ลองเลือก "ทุกหมวดหมู่"', snapped:'Snap ไปที่ {name} ({n} กม.)', coffeeMissing:'ยังไม่มีคาเฟ่ที่มีพิกัด' });
+
 const t = (key, vars = {}) => Object.entries(vars).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), messages[language]?.[key] || messages.zh[key] || key);
-function applyLanguage() { document.documentElement.lang = language === 'zh' ? 'zh-CN' : language; updateMapEdges(); document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); }); document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); }); document.querySelectorAll('.language-select').forEach(select => { select.value = language; }); if (data) { renderRemembered(); renderCategories(); render(); } }
+function applyLanguage() { document.documentElement.lang = language === 'zh' ? 'zh-CN' : language; updateMapEdges(); document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); }); document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); }); document.querySelectorAll('.language-select').forEach(select => { select.value = language; }); if (data) { renderRemembered(); renderCategories(); renderGuideControls(); render(); } }
 const categoryPalette = ['#e96f43', '#2f7d69', '#d59b2d', '#6c67a9', '#3c78a8', '#b45b78', '#657d3e', '#9a6544', '#297e8d', '#8e6eaf', '#c47734', '#4f8275'];
 const categoryColor = category => categoryPalette[Math.max(0, data?.categories?.indexOf(category) || 0) % categoryPalette.length];
 function categoryMeta(category = '') { const rules = [
@@ -52,7 +60,7 @@ function renderRemembered() { const list = remembered(), select = $('#remembered
 function switchAuth(mode) { const register = mode === 'register'; $('#loginTab').classList.toggle('active', !register); $('#registerTab').classList.toggle('active', register); $('#loginForm').hidden = register; $('#registerForm').hidden = !register; }
 async function boot() { renderRemembered(); try { const session = await api('/api/session'); currentUser = session.user; rememberUser(currentUser); await showApp(); } catch { $('#login').hidden = false; } }
 function updateUserSummary() { $('#currentName').textContent = currentUser.name; $('#avatar').textContent = currentUser.name.slice(0, 1).toUpperCase(); $('#adminButton').hidden = !currentUser.admin; const remaining = Math.max(0, 6 - Math.floor(Number(currentUser.stars || 0) / 5)); $('#starSummary').innerHTML = `<strong>★ ${Number(currentUser.stars || 0)} ${esc(t('stars'))}</strong><span>${currentUser.coAdmin ? esc(t('coAdmin')) : esc(t('starsToAdmin', { count: remaining }))}</span>`; }
-async function showApp() { $('#login').hidden = true; $('#app').hidden = false; updateUserSummary(); data = await api('/api/places'); $('#updated').textContent = data.source.lastEdited ? `${t('updated')} ${new Date(data.source.lastEdited).toLocaleDateString(language === 'zh' ? 'zh-CN' : language)}` : ''; renderCategories(); initGlobe(); render(); }
+async function showApp() { $('#login').hidden = true; $('#app').hidden = false; initGuideBarSticky(); updateUserSummary(); data = await api('/api/places'); $('#updated').textContent = data.source.lastEdited ? `${t('updated')} ${new Date(data.source.lastEdited).toLocaleDateString(language === 'zh' ? 'zh-CN' : language)}` : ''; renderCategories(); renderGuideControls(); initGlobe(); render(); }
 
 $('#loginTab').onclick = () => switchAuth('login'); $('#registerTab').onclick = () => switchAuth('register');
 document.querySelectorAll('.language-select').forEach(select => select.onchange = () => { language = select.value; localStorage.setItem('cm-language', language); applyLanguage(); if ($('#adminDialog').open) openAdmin(); });
@@ -68,13 +76,18 @@ function compressPhoto(file) { return new Promise((resolve, reject) => { const i
 async function submitContribution(event) { event.preventDefault(); const button = $('#submitShare'), error = $('#shareError'); error.textContent = ''; button.disabled = true; button.textContent = '…'; try { const files = [...$('#sharePhotos').files].slice(0, 3), photos = await Promise.all(files.map(compressPhoto)), reasonTag = $('#shareReason').value === '__custom' ? $('#customReason').value.trim() : $('#shareReason').value, category = $('#shareCategory').value === '__custom' ? $('#customCategory').value.trim() : $('#shareCategory').value, result = await api('/api/contributions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mapsUrl: $('#shareMaps').value.trim(), reasonTag, category, showSharer: $('#sharePublic').value === 'yes', description: $('#shareDescription').value.trim(), photos }) }); currentUser = result.user; updateUserSummary(); data = await api('/api/places'); active = '全部'; renderCategories(); render(); const node = $('#shareResult'); node.hidden = false; node.textContent = `${t('shareSuccess')}${result.promoted ? ` ${t('sharePromoted')}` : ''}`; $('#shareForm').reset(); button.hidden = true; } catch (err) { error.textContent = err.message; button.disabled = false; button.textContent = t('submitShare'); } }
 $('#shareButton').onclick = openShare; $('#closeShare').onclick = () => $('#shareDialog').close(); $('#shareDialog').onclick = event => { if (event.target === $('#shareDialog')) $('#shareDialog').close(); };
 
-function renderCategories() { const cats = ['全部', ...data.categories]; $('#categories').innerHTML = cats.map(c => `<button class="${c === active ? 'active' : ''}" data-cat="${esc(c)}">${esc(c === '全部' ? t('all') : c)}${c === active && c !== '全部' ? ' ×' : ''}</button>`).join(''); $('#categories').onclick = event => { const button = event.target.closest('[data-cat]'); if (!button) return; active = active === button.dataset.cat && active !== '全部' ? '全部' : button.dataset.cat; renderCategories(); render(); focusLocations(filteredItems()); }; }
+function renderCategories() { const cats = ['全部', ...data.categories]; $('#categories').innerHTML = cats.map(c => `<button class="${c === active ? 'active' : ''}" data-cat="${esc(c)}">${esc(c === '全部' ? t('all') : c)}${c === active && c !== '全部' ? ' ×' : ''}</button>`).join(''); $('#categories').onclick = event => { const button = event.target.closest('[data-cat]'); if (!button) return; active = active === button.dataset.cat && active !== '全部' ? '全部' : button.dataset.cat; renderCategories(); render(); }; }
 function distanceKm(a, b) { const rad = n => n * Math.PI / 180, earth = 6371, dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng); const x = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2; return earth * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)); }
-function filteredItems() { const query = $('#search').value.trim().toLocaleLowerCase(); let list = data.items.filter(x => (active === '全部' || x.category === active) && (!query || [x.title, x.displayName, x.name, x.memoryKeyword, x.hint, x.description, x.category, ...(x.tags || [])].join(' ').toLocaleLowerCase().includes(query))); if (nearbyMode && userLocation) list = list.filter(x => x.location?.lat && x.location?.lng).map(x => ({ ...x, distance: distanceKm(userLocation, x.location) })).filter(x => x.distance <= nearbyRadiusKm).sort((a, b) => a.distance - b.distance); return list; }
+function filteredItems() { const query = $('#search').value.trim().toLocaleLowerCase(); let list = data.items.filter(x => (active === '全部' || x.category === active) && (!query || [x.title, x.displayName, x.name, x.memoryKeyword, x.hint, x.description, x.category, ...(x.tags || [])].join(' ').toLocaleLowerCase().includes(query))); if (nearbyMode && userLocation) list = list.filter(x => x.location?.lat && x.location?.lng).map(x => ({ ...x, distance: distanceKm(userLocation, x.location) })).filter(x => x.distance <= nearbyRadiusKm).sort((a, b) => a.distance - b.distance);
+  const focus = guideFocusItems(); if (focus) { const byId = new Map(focus.map(x => [x.id, x.guideDistance])); list = list.filter(x => byId.has(x.id)).sort((a, b) => byId.get(a.id) - byId.get(b.id)); }
+  return list; }
 function pointFeature(item) { const point = displayLocation(item); return { type: 'Feature', geometry: { type: 'Point', coordinates: [Number(point.lng), Number(point.lat)] }, properties: { id: item.id, name: item.name || item.title, category: item.category, color: categoryColor(item.category) } }; }
 function initGlobe() {
   if (globeMap || !window.maplibregl || !window.FLAT_MAP_CONFIG) return;
-  const FM = window.FLAT_MAP_CONFIG, B = FM.bounds;
+  const FM = window.FLAT_MAP_CONFIG, B = FM.bounds, G = window.GUIDE_CONFIG;
+  const paper = G?.palette?.paper || '#f7f5ec';
+  // 参考图风格：把 OSM 街道底图洗成米白纸感，再叠柔和色块与大号地标
+  const wash = { 'raster-opacity': .84, 'raster-saturation': -.62, 'raster-contrast': -.14, 'raster-brightness-min': .34, 'raster-brightness-max': .98 };
   const style = {
     version: 8,
     sources: {
@@ -86,28 +99,31 @@ function initGlobe() {
       }
     },
     layers: [
-      { id: 'paper', type: 'background', paint: { 'background-color': '#eaf1e6' } },
-      { id: 'osm-colour', type: 'raster', source: 'osm', paint: { 'raster-opacity': 1, 'raster-saturation': -0.06, 'raster-contrast': 0.03 } }
+      { id: 'paper', type: 'background', paint: { 'background-color': paper } },
+      { id: 'osm-colour', type: 'raster', source: 'osm', paint: wash }
     ]
   };
   globeMap = new maplibregl.Map({
-    container: 'globe', center: [FM.center.lng, FM.center.lat], zoom: 9.4,
-    minZoom: 8.2, maxZoom: 18, pitch: 0, bearing: 0,
-    attributionControl: false, style
+    container: 'globe', center: [FM.center.lng, FM.center.lat], zoom: G?.snap?.overviewZoom || 9.4,
+    minZoom: 8.2, maxZoom: 15, pitch: 0, bearing: 0,
+    attributionControl: false, style,
+    // 手机与电脑都不允许自由拖动 / 缩放 / 旋转：镜头只由上方按钮控制
+    dragPan: false, dragRotate: false, scrollZoom: false, touchZoomRotate: false,
+    touchPitch: false, doubleClickZoom: false, boxZoom: false, keyboard: false,
+    pitchWithRotate: false
   });
-  globeMap.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
   globeMap.addControl(new maplibregl.ScaleControl({ maxWidth: 130, unit: 'metric' }), 'bottom-left');
   globeMap.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   globeMap.on('load', () => {
-    // 本地拼接的 OSM 彩色底图作为兜底：外网瓦片不可用或加载中时，地图依然是清迈彩色平面图
+    // 本地拼接的 OSM 彩色底图作为兜底：外网瓦片不可用时地图依然是清迈彩色平面图
     if (FM.basemap?.corners) {
       globeMap.addSource('local-basemap', { type: 'image', url: '/assets/chiang-mai-basemap.png', coordinates: FM.basemap.corners });
-      globeMap.addLayer({ id: 'local-basemap', type: 'raster', source: 'local-basemap', paint: { 'raster-opacity': 1, 'raster-fade-duration': 0 } }, 'osm-colour');
+      globeMap.addLayer({ id: 'local-basemap', type: 'raster', source: 'local-basemap', paint: { ...wash, 'raster-opacity': 1, 'raster-fade-duration': 0 } }, 'osm-colour');
     }
     const frame = [[B.west, B.north], [B.east, B.north], [B.east, B.south], [B.west, B.south], [B.west, B.north]];
     globeMap.addSource('flat-frame', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: frame }, properties: {} } });
-    globeMap.addLayer({ id: 'flat-frame-halo', type: 'line', source: 'flat-frame', paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': .85 } });
-    globeMap.addLayer({ id: 'flat-frame-line', type: 'line', source: 'flat-frame', paint: { 'line-color': '#173f36', 'line-width': 3 } });
+    globeMap.addLayer({ id: 'flat-frame-halo', type: 'line', source: 'flat-frame', paint: { 'line-color': '#ffffff', 'line-width': 6, 'line-opacity': .7 } });
+    globeMap.addLayer({ id: 'flat-frame-line', type: 'line', source: 'flat-frame', paint: { 'line-color': '#173f36', 'line-width': 2, 'line-opacity': .6 } });
 
     const cos = Math.cos(FM.center.lat * Math.PI / 180), ring = [];
     for (let step = 0; step <= 90; step++) {
@@ -115,22 +131,158 @@ function initGlobe() {
       ring.push([FM.center.lng + FM.halfKm / (111.32 * cos) * Math.cos(a), FM.center.lat + FM.halfKm / 111.32 * Math.sin(a)]);
     }
     globeMap.addSource('flat-radius', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: ring }, properties: {} } });
-    globeMap.addLayer({ id: 'flat-radius-line', type: 'line', source: 'flat-radius', paint: { 'line-color': '#b8702f', 'line-width': 2, 'line-dasharray': [2, 2], 'line-opacity': .9 } });
+    globeMap.addLayer({ id: 'flat-radius-line', type: 'line', source: 'flat-radius', paint: { 'line-color': '#b8702f', 'line-width': 1.5, 'line-dasharray': [2, 3], 'line-opacity': .5 } });
 
     globeMap.addSource('flat-centre', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'Point', coordinates: [FM.center.lng, FM.center.lat] }, properties: {} } });
-    globeMap.addLayer({ id: 'flat-centre-ring', type: 'circle', source: 'flat-centre', paint: { 'circle-radius': 9, 'circle-color': '#ffffff', 'circle-stroke-color': '#173f36', 'circle-stroke-width': 3 } });
+    globeMap.addLayer({ id: 'flat-centre-ring', type: 'circle', source: 'flat-centre', paint: { 'circle-radius': 7, 'circle-color': '#ffffff', 'circle-stroke-color': '#173f36', 'circle-stroke-width': 2 } });
 
     globeMap.addSource('places', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    globeMap.addLayer({ id: 'category-zones', type: 'circle', source: 'places', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 8, 6, 11, 13, 15, 26], 'circle-color': ['get', 'color'], 'circle-opacity': 0.08, 'circle-blur': 0.65 } });
+    globeMap.addLayer({ id: 'category-zones', type: 'circle', source: 'places', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 8, 6, 11, 13, 15, 26], 'circle-color': ['get', 'color'], 'circle-opacity': 0.06, 'circle-blur': 0.65 } });
     globeMap.addSource('me', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     globeMap.addSource('radius', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    globeMap.addLayer({ id: 'nearby-radius', type: 'fill', source: 'radius', paint: { 'fill-color': '#2f7d69', 'fill-opacity': 0.1, 'fill-outline-color': '#2f7d69' } });
+    globeMap.addLayer({ id: 'nearby-radius', type: 'fill', source: 'radius', paint: { 'fill-color': '#2f7d69', 'fill-opacity': 0.08, 'fill-outline-color': '#2f7d69' } });
     globeMap.addLayer({ id: 'me-halo', type: 'circle', source: 'me', paint: { 'circle-radius': 16, 'circle-color': '#2f7d69', 'circle-opacity': 0.18 } });
     globeMap.addLayer({ id: 'me-point', type: 'circle', source: 'me', paint: { 'circle-radius': 7, 'circle-color': '#173f36', 'circle-stroke-color': '#fff', 'circle-stroke-width': 3 } });
-    ['dragstart', 'zoomstart'].forEach(name => globeMap.on(name, () => document.querySelectorAll('.globe-hint').forEach(hint => hint.classList.add('used'))));
+    addGuideLayers();
+    syncGuideVisibility();
+    globeMap.on('zoom', syncGuideVisibility);
     flatMapReadyHook();
-    globeReady = true; render(); focusLocations(filteredItems());
+    globeReady = true;
+    render();
+    focusLocations();
+    autoSnapNearestCoffee();
   });
+}
+
+// ---------- v24 插画导览图层 + 受控自动吸附 ----------
+// 顶部搜索栏是 sticky；导览控件条必须停在它下方，否则滚动后会被盖住点不到。
+function initGuideBarSticky() {
+  const wrap = document.querySelector('.search-wrap');
+  if (!wrap) return;
+  const sync = () => document.documentElement.style.setProperty('--sticky-top', `${Math.ceil(wrap.getBoundingClientRect().height)}px`);
+  sync();
+  if ('ResizeObserver' in window) new ResizeObserver(sync).observe(wrap);
+  else window.addEventListener('resize', sync);
+}
+const GUIDE = () => window.GUIDE_CONFIG;
+const GUIDE_RADIUS_KM = 3;
+const guideLabel = obj => (obj && (obj[language] || obj.zh || obj.en)) || '';
+// 只认「咖啡馆」分类或店名里明确写了 cafe/coffee 的地点。
+// 不能用 title / memoryKeyword：那里常出现「古城咖啡」「宁曼咖啡」之类的区域标签，会把早午餐店误判成咖啡馆。
+function isCoffee(item) {
+  if (/咖啡|cafe|coffee|カフェ|คาเฟ่|กาแฟ/i.test(String(item.category || ''))) return true;
+  return /\b(cafe|coffee|espresso|roastery|brew)\b|咖啡馆/i.test(String(item.name || ''));
+}
+function snapAnchor() { return userLocation || (window.FLAT_MAP_CONFIG?.center || { lng: 98.9853, lat: 18.7883 }); }
+function nearestCoffee() {
+  if (!data) return null;
+  const anchor = snapAnchor();
+  return data.items
+    .filter(x => isCoffee(x) && Number.isFinite(Number(x.location?.lat)) && Number.isFinite(Number(x.location?.lng)))
+    .map(x => ({ ...x, snapDistance: distanceKm(anchor, x.location) }))
+    .sort((a, b) => a.snapDistance - b.snapDistance)[0] || null;
+}
+function guideFocusItems() {
+  if (guideMode !== 'focus' || !guideAnchor || !data) return null;
+  return data.items
+    .filter(x => Number.isFinite(Number(x.location?.lat)) && Number.isFinite(Number(x.location?.lng)))
+    .map(x => ({ ...x, guideDistance: distanceKm(guideAnchor, x.location) }))
+    .filter(x => x.guideDistance <= GUIDE_RADIUS_KM)
+    .filter(x => !guideCategory || x.category === guideCategory)
+    .sort((a, b) => a.guideDistance - b.guideDistance);
+}
+function addGuideLayers() {
+  const G = GUIDE(); if (!G || !globeMap) return;
+  const zones = window.GUIDE_ZONES;
+  if (zones && !globeMap.getSource('guide-zones')) {
+    globeMap.addSource('guide-zones', { type: 'geojson', data: zones });
+    const guideMinZoom = G.snap?.guideMinZoom || 10.8;
+    globeMap.addLayer({ id: 'guide-zone-fill', type: 'fill', source: 'guide-zones', minzoom: guideMinZoom, paint: { 'fill-color': ['get', 'fill'], 'fill-opacity': ['get', 'opacity'] }, layout: { visibility: 'visible' } }, 'category-zones');
+    globeMap.addLayer({ id: 'guide-zone-line', type: 'line', source: 'guide-zones', minzoom: guideMinZoom, paint: { 'line-color': ['get', 'stroke'], 'line-width': 2, 'line-opacity': ['get', 'strokeOpacity'], 'line-dasharray': [3, 2] } }, 'category-zones');
+  }
+  guideDecor.forEach(marker => marker.remove()); guideDecor = [];
+  const add = (el, at, cls) => {
+    el.className = cls;
+    guideDecor.push(new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat(at).addTo(globeMap));
+  };
+  G.zones.filter(z => z.labelAt && guideLabel(z.label)).forEach(z => {
+    const el = document.createElement('div');
+    el.innerHTML = `<span>${esc(guideLabel(z.label))}</span>`;
+    el.style.setProperty('--guide-label-color', z.labelColor || G.palette.red);
+    add(el, z.labelAt, `guide-label guide-label-${z.labelSize || 'large'}`);
+  });
+  G.landmarks.forEach(item => {
+    const el = document.createElement('div');
+    el.innerHTML = `<span>${esc(guideLabel(item.label))}</span>`;
+    el.style.setProperty('--guide-label-color', item.color || G.palette.red);
+    add(el, item.at, `guide-label guide-label-${item.size || 'medium'}${item.vertical ? ' guide-label-vertical' : ''}`);
+  });
+  G.icons.forEach(item => {
+    const el = document.createElement('div');
+    el.textContent = item.glyph;
+    el.style.setProperty('--guide-icon-tone', item.tone || '#4b6a58');
+    add(el, item.at, 'guide-icon');
+  });
+}
+// 50 km 全图时插画层收起：城区文字在远缩放下会挤成一团
+function syncGuideVisibility() {
+  if (!globeMap) return;
+  const min = GUIDE()?.snap?.guideMinZoom || 10.8;
+  $('#globe')?.classList.toggle('is-overview', globeMap.getZoom() < min);
+}
+function renderGuideControls() {
+  const select = $('#nearbyCategory'); if (!select || !data) return;
+  const current = guideCategory;
+  select.innerHTML = `<option value="">${esc(t('allCategories'))}</option>` + data.categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  select.value = current;
+  updateGuideNote();
+}
+function updateGuideNote() {
+  const note = $('#focusNote'); if (!note) return;
+  if (guideMode === 'focus' && guideAnchor) {
+    const n = (guideFocusItems() || []).length;
+    note.textContent = n ? t('focusRange', { n, cat: guideCategory || t('allCategories') }) : t('guideEmpty');
+    note.classList.add('is-focus');
+  } else {
+    note.textContent = t('guideHint');
+    note.classList.remove('is-focus');
+  }
+}
+// openPreview 默认 false：吸附只负责把镜头对到最近咖啡馆，不弹出详情卡，
+// 否则预览卡会盖住「古城区」这类大号地标，点具体标记才展开详情。
+function enterFocus(place, category = '', openPreview = false) {
+  if (!place?.location) return;
+  guideMode = 'focus';
+  guideAnchor = { lng: place.location.lng, lat: place.location.lat };
+  guideCategory = category;
+  $('#nearbyCategory').value = category;
+  active = '全部'; $('#search').value = '';
+  nearbyMode = false;
+  $('#nearbyButton').classList.remove('active');
+  $('#nearbyRadius').disabled = true;
+  $('#nearbyStatus').textContent = t('nearbyHint');
+  renderCategories(); setView('globe'); render(); focusLocations();
+  if (openPreview) showPlacePreview(place.id);
+  else { selectedPlaceId = null; $('#placePreview').hidden = true; $('#globeStage').classList.remove('has-preview'); }
+  updateGuideNote();
+}
+function leaveFocus(toList = false) {
+  guideMode = 'overview'; guideAnchor = null; guideCategory = '';
+  active = '全部'; $('#search').value = '';
+  $('#nearbyCategory').value = '';
+  nearbyMode = false; userLocation = null;
+  $('#nearbyButton').classList.remove('active');
+  $('#nearbyRadius').disabled = true;
+  $('#nearbyStatus').textContent = t('nearbyHint');
+  renderCategories(); render(); setView(toList ? 'list' : 'globe'); focusLocations(); updateGuideNote();
+}
+function autoSnapNearestCoffee() {
+  if (guideAutoDone || !data) return;
+  guideAutoDone = true;
+  const coffee = nearestCoffee();
+  if (!coffee) { $('#focusNote').textContent = t('coffeeMissing'); return; }
+  focusLocations();
+  setTimeout(() => { if (guideMode === 'overview' && !selectedPlaceId) enterFocus(coffee, ''); }, 480);
 }
 
 // 平面地图：四边方向标注 + 50km 之外的地点
@@ -183,12 +335,13 @@ function renderOutside() {
 
 function distanceLabel(item) { if (!userLocation || !item.location) return t('distanceHint'); const km = distanceKm(userLocation, item.location); return km < 1 ? t('distanceM', { n: Math.round(km * 1000) }) : t('distanceKm', { n: km.toFixed(1) }); }
 function radiusFeature(center, radiusKm) { const coordinates = []; for (let step = 0; step <= 72; step++) { const angle = step / 72 * Math.PI * 2, latOffset = radiusKm / 111.32 * Math.sin(angle), lngOffset = radiusKm / (111.32 * Math.cos(center.lat * Math.PI / 180)) * Math.cos(angle); coordinates.push([center.lng + lngOffset, center.lat + latOffset]); } return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coordinates] }, properties: {} }; }
-function focusLocations(items) { if (!globeReady || !window.FLAT_MAP_CONFIG) return; const FM = window.FLAT_MAP_CONFIG; const located = items.filter(x => x.location?.lat && x.location?.lng); if (!located.length) return; if (active === '全部' && !nearbyMode && !$('#search').value.trim()) { globeMap.fitBounds([[FM.bounds.west, FM.bounds.south], [FM.bounds.east, FM.bounds.north]], { padding: 14, duration: 900 }); return; } const bounds = new maplibregl.LngLatBounds(); located.forEach(x => { const point = displayLocation(x); bounds.extend([point.lng, point.lat]); }); if (!bounds.isEmpty()) globeMap.fitBounds(bounds, { padding: 85, maxZoom: 13, duration: 850 }); }
+function focusLocations() { if (!globeReady || !window.FLAT_MAP_CONFIG) return; const FM = window.FLAT_MAP_CONFIG, G = GUIDE(); if (guideMode === 'focus' && guideAnchor) { const zoom = window.innerWidth < 620 ? (G?.snap?.focusZoomMobile || 11.6) : (G?.snap?.focusZoom || 12.2); globeMap.easeTo({ center: [guideAnchor.lng, guideAnchor.lat], zoom, pitch: 0, bearing: 0, duration: 620 }); return; } globeMap.fitBounds([[FM.bounds.west, FM.bounds.south], [FM.bounds.east, FM.bounds.north]], { padding: 14, duration: 0 }); }
 function focusNearby() { if (!globeReady || !userLocation) return; const zoom = nearbyRadiusKm <= .2 ? 15 : nearbyRadiusKm <= .5 ? 14 : nearbyRadiusKm <= .8 ? 13.5 : nearbyRadiusKm <= 1 ? 13 : nearbyRadiusKm <= 3 ? 11.5 : nearbyRadiusKm <= 5 ? 11 : 10; globeMap.easeTo({ center: [userLocation.lng, userLocation.lat], zoom, pitch: 0, duration: 850 }); }
-function showPlacePreview(id, focus = false) { const item = data.items.find(x => x.id === id); if (!item) return; selectedPlaceId = id; document.querySelectorAll('.place-marker').forEach(marker => marker.classList.toggle('selected', marker.dataset.id === id)); const preview = $('#placePreview'), meta = categoryMeta(item.category); preview.hidden = false; $('#globeStage').classList.add('has-preview'); preview.innerHTML = `<span class="preview-category" style="--category-color:${categoryColor(item.category)}">${meta.icon} ${esc(meta.short)} · ${esc(item.category)}</span><h3>${esc(item.name || item.title)}</h3><p>${esc(item.hint && item.hint !== item.name ? item.hint : t('fullGuide'))}</p><div><strong>${esc(distanceLabel(item))}</strong><button type="button" data-open-place="${esc(item.id)}">${esc(t('openNow'))}</button></div>`; preview.dataset.openPlace = item.id; if (focus && item.location) { const point = displayLocation(item); globeMap?.easeTo({ center: [point.lng, point.lat], zoom: Math.max(globeMap.getZoom(), 12.5), duration: 650 }); } }
-function renderMarkers(items) { globeMarkers.forEach(marker => marker.remove()); globeMarkers = []; if (!globeReady) return; items.forEach(item => { const meta = categoryMeta(item.category), point = displayLocation(item), element = document.createElement('button'), line = `${meta.icon} ${meta.short} · ${item.name || item.title}`; element.type = 'button'; element.className = `place-marker${line.length > 15 ? ' marquee' : ''}`; element.dataset.id = item.id; element.style.setProperty('--marker-color', categoryColor(item.category)); element.setAttribute('aria-label', `${meta.short}，${item.name || item.title}，点击选中`); element.innerHTML = `<span class="marker-line"><span>${esc(line)}</span>${line.length > 15 ? `<span aria-hidden="true">${esc(line)}</span>` : ''}</span>`; element.onclick = event => { event.stopPropagation(); showPlacePreview(item.id); }; const marker = new maplibregl.Marker({ element, anchor: 'center' }).setLngLat([point.lng, point.lat]).addTo(globeMap); globeMarkers.push(marker); }); }
-function scheduleAutoTour(list = filteredItems()) { clearInterval(autoTourTimer); clearTimeout(autoTourDelay); if (!autoTourEnabled || viewMode !== 'globe') return; const located = list.filter(item => item.location?.lat && item.location?.lng); if (!located.length) return; autoTourIndex %= located.length; const advance = () => { if ($('#detail').open || $('#adminDialog').open || document.hidden) return; showPlacePreview(located[autoTourIndex % located.length].id, false); autoTourIndex = (autoTourIndex + 1) % located.length; }; autoTourDelay = setTimeout(advance, 700); autoTourTimer = setInterval(advance, 4200); }
+function showPlacePreview(id, focus = false) { const item = data.items.find(x => x.id === id); if (!item) return; selectedPlaceId = id; document.querySelectorAll('.place-marker').forEach(marker => marker.classList.toggle('selected', marker.dataset.id === id)); const preview = $('#placePreview'), meta = categoryMeta(item.category); preview.hidden = false; $('#globeStage').classList.add('has-preview'); preview.innerHTML = `<span class="preview-category" style="--category-color:${categoryColor(item.category)}">${meta.icon} ${esc(meta.short)} · ${esc(item.category)}</span><h3>${esc(item.name || item.title)}</h3><p>${esc(item.hint && item.hint !== item.name ? item.hint : t('fullGuide'))}</p><div><strong>${esc(distanceLabel(item))}</strong><button type="button" data-open-place="${esc(item.id)}">${esc(t('openNow'))}</button></div>`; preview.dataset.openPlace = item.id; }
+function renderMarkers(items) { globeMarkers.forEach(marker => marker.remove()); globeMarkers = []; if (!globeReady) return; items.forEach(item => { const meta = categoryMeta(item.category), point = displayLocation(item), element = document.createElement('button'); element.type = 'button'; element.className = 'place-marker guide-pin'; element.dataset.id = item.id; element.style.setProperty('--marker-color', categoryColor(item.category)); element.setAttribute('aria-label', `${meta.short}，${item.name || item.title}`); element.innerHTML = `<span class="pin-glyph">${meta.icon}</span><span class="pin-name">${esc(item.name || item.title)}</span>`; element.onclick = event => { event.stopPropagation(); showPlacePreview(item.id); }; const marker = new maplibregl.Marker({ element, anchor: 'center' }).setLngLat([point.lng, point.lat]).addTo(globeMap); globeMarkers.push(marker); }); }
+function scheduleAutoTour() { clearInterval(autoTourTimer); clearTimeout(autoTourDelay); }
 function renderGlobe(list) {
+  $('#globe')?.classList.toggle('is-focused', guideMode === 'focus');
   const located = list.filter(x => Number.isFinite(Number(x.location?.lat)) && Number.isFinite(Number(x.location?.lng))), unlocated = list.filter(x => !x.location?.lat || !x.location?.lng);
   $('#mappedCount').textContent = located.length; $('#unmappedCount').textContent = unlocated.length;
   if (globeReady) globeMap.getSource('places').setData({ type: 'FeatureCollection', features: located.map(pointFeature) });
@@ -204,10 +357,16 @@ function renderGlobe(list) {
 function tagChips(item) { return `<div class="tag-chips">${(item.tags?.length ? item.tags : [categoryMeta(item.category).short]).slice(0, 2).map(tag => `<span>${esc(tag)}</span>`).join('')}</div>`; }
 function renderList(list) { $('#cards').innerHTML = list.map(item => `<article class="card" data-open-place="${esc(item.id)}" tabindex="0">${item.cover ? `<img data-place-image class="card-cover" src="${esc(item.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}<div class="card-body">${tagChips(item)}<h2>${esc(item.displayName || item.name || item.title)}</h2>${item.community ? `<small class="contributor-line">${esc(item.contributor?.name ? t('sharedBy', { name: item.contributor.name }) : t('friendShared'))}</small>` : ''}<p>${esc(item.memoryKeyword || (item.hint && item.hint !== item.name ? item.hint : item.description) || t('fullGuide'))}</p><div class="meta"><span>${esc(distanceLabel(item))}</span><span>${esc(t('viewDetail'))}</span></div></div></article>`).join(''); }
 function setView(mode) { viewMode = mode === 'list' ? 'list' : 'globe'; localStorage.setItem('cm-view-mode', viewMode); $('#globeView').hidden = viewMode !== 'globe'; $('#listView').hidden = viewMode !== 'list'; document.querySelectorAll('[data-view]').forEach(button => { const selected = button.dataset.view === viewMode; button.classList.toggle('active', selected); button.setAttribute('aria-pressed', String(selected)); }); if (viewMode === 'globe') setTimeout(() => globeMap?.resize(), 40); else { clearInterval(autoTourTimer); clearTimeout(autoTourDelay); } }
-function render() { const list = filteredItems(); $('#count').textContent = list.length; renderGlobe(list); renderList(list); setView(viewMode); scheduleAutoTour(list); $('#empty').hidden = !!list.length; }
+function render() { const list = filteredItems(); $('#count').textContent = list.length; renderGlobe(list); renderList(list); setView(viewMode); scheduleAutoTour(); updateGuideNote(); $('#empty').hidden = !!list.length; }
 document.querySelector('.view-switch').onclick = event => { const button = event.target.closest('[data-view]'); if (button) setView(button.dataset.view); };
-$('#recenterGlobe').onclick = () => { const button = $('#recenterGlobe'); button.classList.remove('rebounding'); void button.offsetWidth; button.classList.add('rebounding'); setTimeout(() => button.classList.remove('rebounding'), 900); if (nearbyMode && userLocation) focusNearby(); else focusLocations(filteredItems()); };
-$('#autoTourButton').onclick = () => { autoTourEnabled = !autoTourEnabled; const button = $('#autoTourButton'); button.classList.toggle('active', autoTourEnabled); button.setAttribute('aria-pressed', String(autoTourEnabled)); button.innerHTML = autoTourEnabled ? `<span>▶</span> ${esc(t('autoTour'))}` : `<span>Ⅱ</span> ${esc(t('paused'))}`; scheduleAutoTour(); };
+$('#recenterGlobe').onclick = () => { const button = $('#recenterGlobe'); button.classList.remove('rebounding'); void button.offsetWidth; button.classList.add('rebounding'); setTimeout(() => button.classList.remove('rebounding'), 900); if (guideMode === 'focus') { guideMode = 'overview'; guideAnchor = null; guideCategory = ''; $('#nearbyCategory').value = ''; render(); } focusLocations(); };
+$('#backToList').onclick = () => leaveFocus(true);
+$('#snapCoffee').onclick = () => { const coffee = nearestCoffee(); if (coffee) enterFocus(coffee, $('#nearbyCategory').value || ''); else { $('#focusNote').textContent = t('coffeeMissing'); } };
+$('#nearbyCategory').onchange = event => {
+  const category = event.target.value;
+  if (!guideAnchor) { const coffee = nearestCoffee(); if (coffee) { enterFocus(coffee, category); return; } }
+  guideCategory = category; render(); updateGuideNote();
+};
 function setAppHeight() { document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`); }
 const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 async function leaveFullscreen() { const stage = $('#globeStage'); if (document.fullscreenElement) await document.exitFullscreen(); stage.classList.remove('pseudo-fullscreen'); document.body.classList.remove('map-fullscreen'); $('#fullscreenGlobe').innerHTML = `<span>⛶</span> ${esc(t('fullscreen'))}`; setTimeout(() => globeMap?.resize(), 120); }
@@ -220,7 +379,7 @@ $('#search').addEventListener('input', render); $('#search').addEventListener('k
 function radiusLabel() { const meters = Number($('#nearbyRadius').value) * 1000; if (meters < 1000) return language === 'zh' ? `${meters} 米` : language === 'th' ? `${meters} ม.` : `${meters} m`; const km = meters / 1000; return language === 'zh' ? `${km} 公里` : language === 'th' ? `${km} กม.` : `${km} km`; }
 function updateNearbyStatus() { $('#nearbyStatus').textContent = t('nearbyCount', { range: radiusLabel(), count: filteredItems().length }); }
 $('#nearbyRadius').onchange = event => { nearbyRadiusKm = Number(event.target.value); if (nearbyMode) { render(); updateNearbyStatus(); focusNearby(); } };
-$('#nearbyButton').onclick = () => { if (nearbyMode) { nearbyMode = false; userLocation = null; $('#nearbyButton').classList.remove('active'); $('#nearbyRadius').disabled = true; $('#nearbyStatus').textContent = t('nearbyHint'); render(); focusLocations(filteredItems()); return; } if (!navigator.geolocation) { $('#nearbyStatus').textContent = t('locationUnsupported'); return; } $('#nearbyStatus').textContent = t('locating'); navigator.geolocation.getCurrentPosition(position => { userLocation = { lat: position.coords.latitude, lng: position.coords.longitude }; nearbyMode = true; nearbyRadiusKm = Number($('#nearbyRadius').value); $('#nearbyButton').classList.add('active'); $('#nearbyRadius').disabled = false; const count = data.items.filter(x => x.location?.lat && x.location?.lng).length; if (count) { render(); updateNearbyStatus(); focusNearby(); } else { $('#nearbyStatus').textContent = t('coordinatesMissing'); render(); } }, error => { $('#nearbyStatus').textContent = error.code === 1 ? t('locationDenied') : t('locationFailed'); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }); };
+$('#nearbyButton').onclick = () => { if (nearbyMode) { nearbyMode = false; userLocation = null; $('#nearbyButton').classList.remove('active'); $('#nearbyRadius').disabled = true; $('#nearbyStatus').textContent = t('nearbyHint'); render(); focusLocations(); return; } if (!navigator.geolocation) { $('#nearbyStatus').textContent = t('locationUnsupported'); return; } $('#nearbyStatus').textContent = t('locating'); navigator.geolocation.getCurrentPosition(position => { userLocation = { lat: position.coords.latitude, lng: position.coords.longitude }; nearbyMode = true; guideMode = 'overview'; guideAnchor = null; guideCategory = ''; $('#nearbyCategory').value = ''; nearbyRadiusKm = Number($('#nearbyRadius').value); $('#nearbyButton').classList.add('active'); $('#nearbyRadius').disabled = false; const count = data.items.filter(x => x.location?.lat && x.location?.lng).length; if (count) { render(); updateNearbyStatus(); focusNearby(); } else { $('#nearbyStatus').textContent = t('coordinatesMissing'); render(); } }, error => { $('#nearbyStatus').textContent = error.code === 1 ? t('locationDenied') : t('locationFailed'); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }); };
 document.addEventListener('keydown', event => { if ((event.metaKey || event.ctrlKey) && event.key === 'k') { event.preventDefault(); $('#search').focus(); } if (event.key === 'Escape') { if ($('#detail').open) $('#detail').close(); if ($('#adminDialog').open) $('#adminDialog').close(); } });
 
 function renderBlock(block) { if (block.type === 'image') return `<figure><img src="${esc(block.src)}" alt="${esc(block.caption || '地点照片')}">${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}</figure>`; if (block.type === 'divider') return '<hr>'; if (block.type === 'heading') return `<h${Math.min(4, (block.level || 2) + 1)}>${esc(block.text)}</h${Math.min(4, (block.level || 2) + 1)}>`; if (block.type === 'bullet' || block.type === 'number') return `<div class="manual-list"><span>${block.type === 'bullet' ? '•' : '—'}</span><p>${esc(block.text)}</p></div>`; if (block.type === 'todo') return `<p class="manual-todo">${block.checked ? '✓' : '○'} ${esc(block.text)}</p>`; if (block.type === 'quote' || block.type === 'callout') return `<blockquote>${esc(block.text)}</blockquote>`; if (block.type === 'code') return `<pre><code>${esc(block.text)}</code></pre>`; if (block.url) return `<a class="link-card" href="${esc(block.url)}" target="_blank" rel="noreferrer"><span>相关链接</span><strong>${esc(block.text)}</strong><b>↗</b></a>`; return `<p>${esc(block.text)}</p>`; }
@@ -234,7 +393,7 @@ function maintainedFacts(item) { const c = item.contact || {}; if (!c.phone && !
 function openCard(id) { const item = data.items.find(x => x.id === id); if (!item) return; const map = item.maps?.[0], textBlocks = (item.blocks || []).filter(block => block.type !== 'image'), blocks = textBlocks.length ? textBlocks.map(renderBlock).join('') : `<p>${esc(item.description || t('fullGuide'))}</p>`, photos = ownPhotos(item); const normalizedLinks = (item.links || []).map(link => typeof link === 'string' ? { url: link, text: '相关链接' } : link).filter(link => /^https?:\/\//.test(link?.url || '') && !(item.maps || []).includes(link.url) && !/notion\.(site|so)|notion\.com/i.test(link.url)); const related = language === 'zh' ? '相关链接' : language === 'th' ? 'ลิงก์ที่เกี่ยวข้อง' : 'Related link', resources = language === 'zh' ? '相关资料' : language === 'th' ? 'ข้อมูลเพิ่มเติม' : 'More information', google = language === 'zh' ? '在 Google 地图打开' : language === 'th' ? 'เปิดใน Google Maps' : 'Open in Google Maps', contributor = item.contributor?.name ? t('sharedBy', { name: item.contributor.name }) : item.community ? t('friendShared') : ''; const links = normalizedLinks.map(link => { let label = link.text; if (!label || label === '相关链接') { try { label = new URL(link.url).hostname; } catch { label = related; } } return `<a class="link-card" href="${esc(link.url)}" target="_blank" rel="noreferrer"><span>${esc(related)}</span><strong>${esc(label)}</strong><b>↗</b></a>`; }).join(''), canEdit = currentUser?.admin || currentUser?.coAdmin; $('#detailBody').innerHTML = `${tagChips(item)}<h2 class="detail-title">${esc(item.displayName || item.name || item.title)}</h2>${item.maintainedBy ? `<p class="maintained-line">${esc(t('maintainedBy',{name:item.maintainedBy}))}</p>` : ''}${contributor ? `<p class="contributor-line">${esc(contributor)}</p>` : ''}${item.memoryKeyword ? `<p class="detail-lead">${esc(item.memoryKeyword)}</p>` : ''}${maintainedFacts(item)}${item.community ? '' : `<div id="livePlaceInfo" class="live-place"><p class="loading">${esc(t('loadingInfo'))}</p></div>`}<article class="manual-content">${blocks}</article>${links ? `<section class="link-section"><h3>${esc(resources)}</h3>${links}</section>` : ''}<div class="actions">${canEdit ? `<button type="button" class="edit-place-button" data-edit-place="${esc(item.id)}">${esc(t('editPlace'))}</button>` : ''}${map ? `<a href="${esc(map)}" target="_blank" rel="noreferrer">${esc(google)}</a>` : ''}</div><div id="bottomPhotos">${galleryHtml(photos, t('guidePhotos'))}</div>`; $('#detail').showModal(); if (!item.community && !item.contact?.openingHours?.length) loadLivePlace(item, !photos.length); }
 function openPlaceEditor(id) { const item = data.items.find(x => x.id === id); if (!item || !(currentUser?.admin || currentUser?.coAdmin)) return; const photos = ownPhotos(item).map(x=>x.src).slice(0,3); $('#detailBody').innerHTML = `<p class="detail-tag">COMMUNITY EDITOR</p><h2 class="detail-title">${esc(t('editPlace'))}</h2><p class="share-lead">${esc(t('editLead'))}</p><form id="placeEditForm" class="share-form editor-form"><label><b>${esc(t('displayName'))} *</b><input id="editDisplayName" maxlength="100" required value="${esc(item.displayName || item.name || item.title)}"></label><label><b>${esc(t('memoryLabel'))}</b><input id="editMemory" maxlength="12" value="${esc(item.memoryKeyword || '')}"></label><label><b>${esc(t('category'))} *</b><input id="editCategory" maxlength="8" required value="${esc(item.detailCategory || item.category || '')}"></label><label><b>${esc(t('tagsLabel'))}</b><small>用逗号分隔，最多 6 个</small><input id="editTags" value="${esc((item.tags || []).join('，'))}"></label><label><b>${esc(t('details'))}</b><textarea id="editDescription" maxlength="1200" rows="6">${esc(item.description || item.hint || '')}</textarea></label><label><b>${esc(t('phoneLabel'))}</b><input id="editPhone" inputmode="tel" value="${esc(item.contact?.phone || '')}"></label><label><b>${esc(t('websiteLabel'))}</b><input id="editWebsite" type="url" value="${esc(item.contact?.website || '')}" placeholder="https://"></label><label><b>${esc(t('hoursLabel'))}</b><small>每行一天，例如：星期三：休息</small><textarea id="editHours" rows="7">${esc((item.contact?.openingHours || []).join('\n'))}</textarea></label><label><b>${esc(t('mapsAddress'))}</b><input id="editMaps" type="url" value="${esc(item.maps?.[0] || '')}"></label><label><b>${esc(t('photoUrls'))}</b><small>每行一张，最多 3 张 HTTPS 图片</small><textarea id="editPhotos" rows="4">${esc(photos.join('\n'))}</textarea></label><button id="savePlaceEdit" class="primary" type="submit">${esc(t('saveChanges'))}</button><p id="placeEditError" class="error"></p><p id="placeEditResult" class="share-result" hidden></p></form>`; $('#placeEditForm').onsubmit = event => savePlaceEdit(event,id); }
 async function savePlaceEdit(event,id) { event.preventDefault(); const button=$('#savePlaceEdit'), error=$('#placeEditError'); error.textContent=''; button.disabled=true; try { const body={ displayName:$('#editDisplayName').value.trim(), memoryKeyword:$('#editMemory').value.trim(), category:$('#editCategory').value.trim(), tags:$('#editTags').value.split(/[,，]/).map(x=>x.trim()).filter(Boolean), description:$('#editDescription').value.trim(), phone:$('#editPhone').value.trim(), website:$('#editWebsite').value.trim(), openingHours:$('#editHours').value.split('\n').map(x=>x.trim()).filter(Boolean), mapsUrl:$('#editMaps').value.trim(), photos:$('#editPhotos').value.split('\n').map(x=>x.trim()).filter(Boolean) }; await api(`/api/places/${encodeURIComponent(id)}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); data=await api('/api/places'); renderCategories(); render(); $('#placeEditResult').hidden=false; $('#placeEditResult').textContent=t('savedChanges'); setTimeout(()=>openCard(id),700); } catch(err){ error.textContent=err.message; button.disabled=false; } }
-document.addEventListener('click', event => { const editor = event.target.closest('[data-edit-place]'); if (editor) { openPlaceEditor(editor.dataset.editPlace); return; } const opener = event.target.closest('[data-open-place]'); if (opener) openCard(opener.dataset.openPlace); const legend = event.target.closest('[data-legend-cat]'); if (legend) { active = active === legend.dataset.legendCat ? '全部' : legend.dataset.legendCat; renderCategories(); render(); focusLocations(filteredItems()); } });
+document.addEventListener('click', event => { const editor = event.target.closest('[data-edit-place]'); if (editor) { openPlaceEditor(editor.dataset.editPlace); return; } const opener = event.target.closest('[data-open-place]'); if (opener) openCard(opener.dataset.openPlace); const legend = event.target.closest('[data-legend-cat]'); if (legend) { active = active === legend.dataset.legendCat ? '全部' : legend.dataset.legendCat; renderCategories(); render(); } });
 document.addEventListener('keydown', event => { const opener = event.target.closest?.('[data-open-place]'); if (opener && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openCard(opener.dataset.openPlace); } });
 $('#closeDetail').onclick = () => $('#detail').close(); $('#detail').onclick = event => { if (event.target === $('#detail')) $('#detail').close(); };
 
@@ -256,6 +415,6 @@ $('#adminButton').onclick = openAdmin; $('#closeAdmin').onclick = () => $('#admi
 
 document.addEventListener('error', event => { const image = event.target; if (!(image instanceof HTMLImageElement) || !image.matches('[data-place-image]') || image.dataset.failed) return; image.dataset.failed = 'true'; const figure = image.closest('figure'); if (figure) { figure.classList.add('image-failed'); image.remove(); if (!figure.querySelector('.image-fallback')) figure.insertAdjacentHTML('afterbegin', `<div class="image-fallback" role="img" aria-label="${esc(t('imageUnavailable'))}"><span>□</span><small>${esc(t('imageUnavailable'))}</small></div>`); } else image.remove(); }, true);
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=23');
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=24');
 applyLanguage();
 boot();

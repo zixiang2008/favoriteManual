@@ -161,6 +161,7 @@ Key design decision: **the website never writes back to Notion**. Notion is the 
 11. **Data you own and can move.** Structured JSON plus sync and build scripts can be regenerated, exported and backed up at any time.
 12. **Still just a web page.** One link, no app store, no installation, consistent across iPhone, Android and desktop.
 13. **Real geography, not a globe.** A flat Chiang Mai map with a 50 km boundary, compass, scale bar and true coordinates shows where places actually are — something a globe of decorative clusters cannot do.
+14. **A guide map you cannot get lost in.** The map snaps to the nearest café, draws soft district colours with oversized landmark lettering, and replaces free pan/zoom/rotate with four explicit controls — so the map never slides away under your thumb on a phone.
 
 ---
 
@@ -180,9 +181,9 @@ Key design decision: **the website never writes back to Notion**. Notion is the 
 
 | Purpose | URL | Notes |
 |---|---|---|
-| Full example site | **<https://cm.caishen.today>** | Production version with login, submissions, the Chiang Mai flat map and nearby filters; requires an account |
+| Full example site | **<https://cm.caishen.today>** | Production version with login, submissions, the illustrated Chiang Mai guide map, snap-to-nearest-café and nearby filters; requires an account |
 | Legacy URL | <https://cm.caishen2049.us> | Same application and data, kept for links shared earlier |
-| Public read-only demo | <https://zixiang2008.github.io/favoriteManual/demo/> | No account needed; try full-text search, category filters, four-language switching and place cards, built from the public snapshot in this repository |
+| Public read-only demo | <https://zixiang2008.github.io/favoriteManual/demo/> | No account needed; try full-text search, category filters, four-language switching, place cards and the illustrated guide map, built from the public snapshot in this repository |
 
 **Interface preview** (public read-only demo):
 
@@ -194,7 +195,7 @@ Key design decision: **the website never writes back to Notion**. Notion is the 
 
 > Place photos in the screenshots come from the public Google Maps cache and are shown for interface demonstration only.
 
-The demo is a static, read-only illustration of why the web version is easier to search and read. Login, submissions, distance filters and the interactive Chiang Mai flat map live in the full example site. **For privacy, neither the repository nor the demo contains any PIN, invitation code or login credential.**
+The demo is a static, read-only illustration of why the web version is easier to search and read. It renders the same illustrated guide map as an SVG, including the snap-to-nearest-café focus and the four guide controls; login, submissions, distance filters and the MapLibre GL version live in the full example site. **For privacy, neither the repository nor the demo contains any PIN, invitation code or login credential.**
 
 Demo data can be regenerated with `node scripts/build-demo-data.mjs` from `data/places.json` and `data/google-maps-cache.json`.
 
@@ -221,13 +222,36 @@ The production site (after login) uses a MapLibre GL flat map, while the public 
 
 `scripts/build-flat-map.mjs` generates `public/flat-map-config.js` and `demo/flat-map-config.js` from the same centre, bounds, directions and basemap parameters. Run `npm run map:config` to regenerate both, so the two views can never drift apart.
 
+### The illustrated guide map: no more panning around
+
+The flat map fixed the geography, but it still expected people to drag, pinch and zoom to find things. On a phone that means the map keeps "running away" under your thumb. The map view now behaves like a printed travel-guide spread instead.
+
+<p><img src="docs/screenshots/guide-map-demo-en.png" width="100%" alt="Illustrated guide map in the public read-only demo, English"></p>
+
+| Behaviour | What changed |
+| --- | --- |
+| Visual style | Paper-toned basemap, soft translucent district blobs (Nimman, Chang Phueak, the old city, Night Bazaar, the mountain side), oversized landmark lettering with a white halo and pictogram decorations — modelled on a printed Chiang Mai tourist map |
+| No free roaming | Drag, scroll zoom, rotate, double-click zoom, box zoom and keyboard panning are all disabled. The camera only moves through the explicit controls below, so the map never slides away while you read it |
+| Snap to the nearest café | On load the map finds the café closest to you (or to the city centre when location is unavailable), centres it and zooms to old-town level |
+| `Back to all places` | Clears the snap and every filter, then returns to the full list |
+| `Nearest café` | Re-snaps to the closest café at any time |
+| `What to see nearby` | A category selector scoped to the 3 km around the snapped point, plus "All categories" |
+| `Whole map` | Returns to the 50 km boundary view with compass, scale bar and the beyond-50 km markers |
+| Illustration visibility | The illustrated layer appears at old-town zoom and is hidden at the 50 km overview, so district lettering never piles up into an unreadable cluster |
+
+The production site after login uses the same behaviour with MapLibre GL:
+
+<p><img src="docs/screenshots/site-guide-map-en.png" width="100%" alt="Illustrated guide map in the production PWA, English"></p>
+
+`scripts/build-guide-config.mjs` generates `public/guide-config.js` and `demo/guide-config.js` from one source of truth (district blobs as GeoJSON, landmark labels in four languages, pictograms and snap parameters). Run `npm run guide:config` to regenerate both, so the demo and the live site can never drift apart.
+
 ---
 
 ## Feature list
 
 - Chinese, English, Japanese and Thai mobile PWA
 - Full-text search; category, sub-category, tag and 200 m–10 km distance filters
-- List view and interactive Chiang Mai flat map (MapLibre + OpenStreetMap raster tiles, with a stitched local mosaic as fallback)
+- List view and an illustrated Chiang Mai guide map (MapLibre + OpenStreetMap raster tiles with a stitched local mosaic fallback), locked to four explicit controls instead of free pan/zoom, snapping to the nearest café on load
 - 150-place snapshot across 26 categories; address, hours, phone, website, booking, photos and map links
 - Named users, 4-digit PIN, salted scrypt hashes, signed sessions, login rate limits, audit logs
 - Limited-use, revocable invitation codes
