@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f36">
+  <meta name="description" content="Manual · Chiang Mai Life Guide - public read-only demo of a searchable, multilingual place handbook">
+  <title>Manual · 清迈生活手册 · Demo</title>
+  <style>
+    :root {
+      --ink: #173f36;
+      --ink-2: #2f6a58;
+      --paper: #f6f4ec;
+      --card: #ffffff;
+      --line: #e2dfd3;
+      --muted: #6d7a72;
+      --accent: #b8702f;
+      --soft: #e9f0ea;
+      --radius: 14px;
+      --shadow: 0 2px 14px rgba(23, 63, 54, .07);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Noto Sans Thai", "Noto Sans JP", "PingFang SC", "Hiragino Sans", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--ink-2); }
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+
+    header.top {
+      background: var(--ink);
+      color: #f4f1e7;
+      padding: 18px 0 20px;
+    }
+    .top-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .mark {
+      width: 42px; height: 42px; flex: 0 0 42px;
+      border: 1.5px solid rgba(255,255,255,.55); border-radius: 11px;
+      display: grid; place-items: center; font-weight: 700; letter-spacing: .06em;
+      font-size: 15px;
+    }
+    .brand h1 { font-size: 19px; margin: 0; font-weight: 650; letter-spacing: .01em; }
+    .brand p { margin: 1px 0 0; font-size: 12px; opacity: .72; letter-spacing: .12em; text-transform: uppercase; }
+    .top-spacer { flex: 1 1 auto; }
+    .langs { display: flex; gap: 4px; background: rgba(255,255,255,.09); padding: 4px; border-radius: 10px; }
+    .langs button {
+      border: 0; background: transparent; color: rgba(255,255,255,.75);
+      padding: 6px 11px; border-radius: 7px; cursor: pointer; font-size: 13px;
+      font-family: inherit; transition: background .15s, color .15s;
+    }
+    .langs button.active { background: #fff; color: var(--ink); font-weight: 650; }
+    .site-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: #e6b96a; color: #2a2419; text-decoration: none;
+      padding: 9px 15px; border-radius: 9px; font-size: 13px; font-weight: 650;
+      white-space: nowrap;
+    }
+    .site-link:hover { background: #f0c77f; }
+
+    .hero { padding: 34px 0 10px; }
+    .kicker { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+    .hero h2 { font-size: clamp(24px, 4vw, 36px); line-height: 1.3; margin: 8px 0 10px; font-weight: 680; }
+    .hero .lead { font-size: 15px; color: var(--muted); max-width: 760px; margin: 0 0 22px; }
+    .compare {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px;
+    }
+    .cmp {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 14px 16px; box-shadow: var(--shadow);
+    }
+    .cmp .before { font-size: 12px; color: #9a6a5c; text-decoration: line-through; opacity: .85; }
+    .cmp .after { font-size: 15px; font-weight: 650; margin-top: 3px; }
+    .cmp .note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .toolbar {
+      position: sticky; top: 0; z-index: 5;
+      background: rgba(246,244,236,.94); backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line); padding: 12px 0; margin-top: 22px;
+    }
+    .tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .search {
+      flex: 1 1 300px; min-width: 220px; position: relative;
+    }
+    .search input {
+      width: 100%; padding: 11px 14px 11px 38px; border: 1px solid var(--line);
+      border-radius: 10px; background: #fff; color: var(--ink); font-size: 14px;
+      font-family: inherit; outline: none;
+    }
+    .search input:focus { border-color: var(--ink-2); box-shadow: 0 0 0 3px var(--soft); }
+    .search svg { position: absolute; left: 12px; top: 12px; opacity: .45; }
+    select#category {
+      padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px;
+      background: #fff; color: var(--ink); font-family: inherit; font-size: 14px;
+      max-width: 230px;
+    }
+    .views { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
+    .views button {
+      border: 0; background: #fff; color: var(--muted); padding: 10px 15px;
+      cursor: pointer; font-family: inherit; font-size: 13px;
+    }
+    .views button.active { background: var(--ink); color: #fff; font-weight: 650; }
+    .count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+
+    main { padding: 22px 0 40px; min-height: 420px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .place {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px;
+    }
+    .place h3 { margin: 0; font-size: 16px; font-weight: 680; line-height: 1.35; word-break: break-word; }
+    .pill {
+      display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 20px;
+      background: var(--soft); color: var(--ink-2); font-weight: 650; align-self: flex-start;
+    }
+    .hint { font-size: 13px; color: var(--accent); font-weight: 600; }
+    .meta { font-size: 12.5px; color: var(--muted); display: grid; gap: 3px; }
+    .meta span b { color: var(--ink); font-weight: 600; }
+    .place .actions { margin-top: auto; padding-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .place a { font-size: 12.5px; font-weight: 650; text-decoration: none; border-bottom: 1px solid currentColor; }
+    .place a:hover { color: var(--accent); }
+    .thumb { width: 100%; height: 120px; object-fit: cover; border-radius: 9px; background: var(--soft); }
+    .empty { text-align: center; padding: 70px 20px; color: var(--muted); }
+
+    .map-wrap { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+    .map-layout { display: grid; grid-template-columns: 1fr 260px; gap: 16px; }
+    svg#plot { width: 100%; height: auto; background: #eef2ea; border-radius: 10px; touch-action: manipulation; }
+    svg#plot circle { cursor: pointer; transition: r .12s, fill .12s; }
+    .map-side { border-left: 1px solid var(--line); padding-left: 16px; font-size: 13px; }
+    .map-side h4 { margin: 0 0 6px; font-size: 15px; }
+    .map-side p { margin: 0 0 8px; color: var(--muted); }
+    .map-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+    #selected { min-height: 130px; }
+
+    .story { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; margin-top: 30px; box-shadow: var(--shadow); }
+    .story h3 { margin: 0 0 12px; font-size: 17px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 650; font-size: 12px; }
+    td:first-child { width: 22%; font-weight: 600; }
+    td:nth-child(2) { color: #96675a; width: 34%; }
+    td:nth-child(3) { color: var(--ink-2); }
+
+    footer { border-top: 1px solid var(--line); padding: 22px 0 34px; font-size: 12.5px; color: var(--muted); }
+    footer a { font-weight: 650; }
+    .footer-links { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 8px; }
+
+    @media (max-width: 820px) {
+      .compare { grid-template-columns: 1fr; }
+      .map-layout { grid-template-columns: 1fr; }
+      .map-side { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; padding-top: 14px; }
+      .top-spacer { display: none; }
+      .site-link { padding: 8px 12px; }
+      .brand p { display: none; }
+      th, td { padding: 8px 6px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <div class="mark">CM</div>
+    <div class="brand">
+      <h1 id="appName">清迈生活手册</h1>
+      <p>Chiang Mai · Thailand</p>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="langs" id="langs">
+      <button data-lang="zh" class="active">中文</button>
+      <button data-lang="en">EN</button>
+      <button data-lang="ja">日本語</button>
+      <button data-lang="th">ไทย</button>
+    </div>
+    <a class="site-link" href="https://cm.caishen.today" target="_blank" rel="noopener" id="siteLink">完整示例网站 ↗</a>
+  </div>
+</header>
+
+<section class="hero wrap">
+  <div class="kicker" id="kicker">Public read-only demo</div>
+  <h2 id="heroTitle">把 Google Maps 上的图钉，变成一本能搜索的手册</h2>
+  <p class="lead" id="heroLead">这套网页版把 150 个清迈地点整理成可搜索、可筛选、四种语言的结构化清单。下面这个只读演示用的是仓库里的公开快照，不需要登录。</p>
+  <div class="compare" id="compare"></div>
+</section>
+
+<div class="toolbar">
+  <div class="wrap tools">
+    <label class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="q" type="search" autocomplete="off" placeholder="搜索店名、区域、分类、地址…">
+    </label>
+    <select id="category" aria-label="Category"></select>
+    <div class="views" id="views">
+      <button data-view="list" class="active" id="viewList">列表</button>
+      <button data-view="map" id="viewMap">地图</button>
+    </div>
+    <span class="count" id="count"></span>
+  </div>
+</div>
+
+<main class="wrap">
+  <div id="listView"><div class="grid" id="grid"></div></div>
+  <div id="mapView" hidden>
+    <div class="map-wrap">
+      <div class="map-layout">
+        <div>
+          <svg id="plot" viewBox="0 0 800 560" role="img" aria-label="Places map"></svg>
+          <div class="map-note" id="mapNote">点按圆点查看地点。坐标来自公开快照，仅用于示意空间分布。</div>
+        </div>
+        <div class="map-side">
+          <h4 id="sideTitle">地点分布</h4>
+          <p id="sideLead">点按地图上的圆点查看详情。</p>
+          <div id="selected"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<section class="story wrap">
+  <h3 id="storyTitle">网页版相比以前的 Google Maps 标记</h3>
+  <table id="storyTable">
+    <thead><tr><th id="thDim">维度</th><th id="thBefore">以前</th><th id="thAfter">现在</th></tr></thead>
+    <tbody id="storyBody"></tbody>
+  </table>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-links">
+      <a href="https://cm.caishen.today" target="_blank" rel="noopener" id="footSite">完整示例网站 cm.caishen.today ↗</a>
+      <a href="https://github.com/zixiang2008/favoriteManual" target="_blank" rel="noopener">GitHub 仓库 ↗</a>
+      <a href="https://github.com/zixiang2008/favoriteManual#readme" target="_blank" rel="noopener">English ↗</a>
+      <a href="https://github.com/zixiang2008/favoriteManual/blob/main/docs/README.zh-CN.md" target="_blank" rel="noopener">简体中文 ↗</a>
+      <a href="https://github.com/zixiang2008/favoriteManual/blob/main/docs/README.ja.md" target="_blank" rel="noopener">日本語 ↗</a>
+      <a href="https://github.com/zixiang2008/favoriteManual/blob/main/docs/README.th.md" target="_blank" rel="noopener">ไทย ↗</a>
+    </div>
+    <div id="footNote">只读演示：不含登录、投稿、距离筛选与交互式地球视图。数据由 scripts/build-demo-data.mjs 从公开快照生成，不含任何凭据或私人长备注。</div>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  const DATA = window.DEMO_DATA || { places: [], categories: [], total: 0, categoryCount: 0 };
+  const PLACES = DATA.places || [];
+  let lang = 'zh';
+  let view = 'list';
+  let selectedId = null;
+
+  const I18N = {
+    zh: {
+      appName: '清迈生活手册', kicker: '公开只读演示', siteLink: '完整示例网站 ↗',
+      heroTitle: '把 Google Maps 上的图钉，变成一本能搜索的手册',
+      heroLead: '这套网页版把 150 个清迈地点整理成可搜索、可筛选、四种语言的结构化清单。下面这个只读演示用的是仓库里的公开快照，不需要登录。',
+      cmp: [
+        ['图钉密密麻麻、来回缩放', '关键词一搜就到', '名称、别名、区域提示、分类、地址都能搜'],
+        ['自己的备注搜不到', '全文搜索 + 组合筛选', '搜索、分类、视图共用同一份结果'],
+        ['只有一种语言', '中 / 英 / 日 / 泰', '界面、分类、筛选器整体切换']
+      ],
+      search: '搜索店名、区域、分类、地址…', all: '全部类别',
+      viewList: '列表', viewMap: '地图', count: (n, t) => `显示 ${n} / ${t} 个地点`,
+      noResult: '没有匹配的地点，换个关键词试试。',
+      openMap: '在 Google Maps 打开 ↗', website: '官方网站 ↗',
+      address: '地址', hours: '营业时间', phone: '电话', area: '区域提示',
+      mapNote: '点按圆点查看地点。坐标来自公开快照，仅用于示意空间分布。',
+      sideTitle: '地点分布', sideLead: '点按地图上的圆点查看详情。',
+      storyTitle: '网页版相比以前的 Google Maps 标记',
+      th: ['维度', '以前：图钉 + 笔记', '现在：网页手册'],
+      rows: [
+        ['找某个地点', '缩放、拖动、逐个点开图钉', '输入关键词即时命中名称、备注、分类与地址'],
+        ['整体可读', '一堆散点，看不出规模与分类', '首屏即总数与分类，卡片一目了然'],
+        ['搜索', '搜不到自己写的备注与标签', '全文搜索 + 分类筛选'],
+        ['语言', '界面随系统，备注只有一种语言', '四种语言整体切换'],
+        ['信息密度', '位置在地图，说明在另一个应用', '一张卡片集中地址、时间、电话、照片与地图链接'],
+        ['视图', '只有地图', '列表与地图双视图'],
+        ['手机', '导航应用，不能离线', '可安装的 PWA，静态资源缓存']
+      ],
+      footNote: '只读演示：不含登录、投稿、距离筛选与交互式地球视图。数据由 scripts/build-demo-data.mjs 从公开快照生成，不含任何凭据或私人长备注。'
+    },
+    en: {
+      appName: 'Chiang Mai Life Guide', kicker: 'Public read-only demo', siteLink: 'Full live site ↗',
+      heroTitle: 'Turn Google Maps pins into a handbook you can actually search',
+      heroLead: 'The web version turns 150 Chiang Mai places into a structured, searchable, filterable, four-language collection. This read-only demo is built from the public snapshot in the repository and needs no account.',
+      cmp: [
+        ['A dense cluster of pins, endless zooming', 'One keyword finds it', 'Search names, area hints, categories and addresses'],
+        ['Your own notes were not searchable', 'Full-text search + filters', 'Search, categories and views share one result set'],
+        ['Only one language', 'Chinese / English / Japanese / Thai', 'Interface, categories and filters switch together']
+      ],
+      search: 'Search name, area, category, address…', all: 'All categories',
+      viewList: 'List', viewMap: 'Map', count: (n, t) => `${n} of ${t} places`,
+      noResult: 'No matches. Try another keyword.',
+      openMap: 'Open in Google Maps ↗', website: 'Website ↗',
+      address: 'Address', hours: 'Hours', phone: 'Phone', area: 'Original note (Chinese)',
+      mapNote: 'Tap a dot to see a place. Coordinates come from the public snapshot and illustrate distribution only.',
+      sideTitle: 'Distribution', sideLead: 'Tap a dot on the map to see details.',
+      storyTitle: 'The web version vs. the old Google Maps pins',
+      th: ['Dimension', 'Before: pins + notebook', 'Now: web handbook'],
+      rows: [
+        ['Finding a place', 'Zoom, pan, tap pins one by one', 'A keyword instantly matches names, notes, categories, addresses'],
+        ['Overview', 'Scattered dots, no visible structure', 'Totals and categories up front, readable cards'],
+        ['Search', 'Your own notes and labels not searchable', 'Full-text search plus category filters'],
+        ['Languages', 'Interface follows the device, notes in one language', 'Four languages switch together'],
+        ['Density', 'Location in the map, explanation in another app', 'One card with address, hours, phone, photo and map link'],
+        ['Views', 'Map only', 'List plus map views'],
+        ['Mobile', 'Navigation app, no offline mode', 'Installable PWA with cached assets']
+      ],
+      footNote: 'Read-only demo: no login, submissions, distance filters or interactive globe. Data is generated by scripts/build-demo-data.mjs from public snapshots and contains no credentials or private long notes.'
+    },
+    ja: {
+      appName: 'チェンマイ生活ガイド', kicker: '公開・読み取り専用デモ', siteLink: '完全版サイト ↗',
+      heroTitle: 'Google Maps のピンを、検索できるハンドブックに',
+      heroLead: 'ウェブ版はチェンマイの 150 件を、検索・絞り込み・4 言語に対応した構造化リストに変えました。このデモはリポジトリの公開スナップショットから生成されており、アカウントは不要です。',
+      cmp: [
+        ['びっしり並んだピンを拡大・縮小', 'キーワード一発で到達', '名称、エリアヒント、カテゴリ、住所を横断検索'],
+        ['自分で書いたメモが検索できない', '全文検索 ＋ 絞り込み', '検索・カテゴリ・ビューが同じ結果を共有'],
+        ['言語は 1 つだけ', '中 / 英 / 日 / タイ', '画面・カテゴリ・フィルターがまとめて切替']
+      ],
+      search: '店名、エリア、カテゴリ、住所で検索…', all: 'すべてのカテゴリ',
+      viewList: 'リスト', viewMap: '地図', count: (n, t) => `${t} 件中 ${n} 件を表示`,
+      noResult: '該当する場所がありません。別のキーワードをお試しください。',
+      openMap: 'Google Maps で開く ↗', website: '公式サイト ↗',
+      address: '住所', hours: '営業時間', phone: '電話', area: '元のメモ（中国語）',
+      mapNote: '点をタップすると場所を表示します。座標は公開スナップショット由来で、分布の示意です。',
+      sideTitle: '場所の分布', sideLead: '地図上の点をタップすると詳細を表示します。',
+      storyTitle: 'ウェブ版と以前の Google Maps ピンの比較',
+      th: ['観点', '以前：ピン ＋ ノート', '現在：ウェブハンドブック'],
+      rows: [
+        ['1 件を探す', '拡大・移動・ピンを順に開く', 'キーワードが名称・メモ・カテゴリ・住所に即時一致'],
+        ['全体像', '散らばった点で構造が見えない', '冒頭に総数とカテゴリ、読みやすいカード'],
+        ['検索', '自分のメモやラベルが対象外', '全文検索 ＋ カテゴリ絞り込み'],
+        ['言語', '画面は端末依存、メモは 1 言語', '4 言語がまとめて切り替わる'],
+        ['情報密度', '位置は地図、説明は別アプリ', '1 枚のカードに住所・時間・電話・写真・地図リンク'],
+        ['ビュー', '地図のみ', 'リストと地図の 2 ビュー'],
+        ['モバイル', 'ナビアプリ、オフライン不可', 'インストール可能な PWA、静的リソースをキャッシュ']
+      ],
+      footNote: '読み取り専用デモです。ログイン、投稿、距離絞り込み、地球儀ビューは含まれません。データは scripts/build-demo-data.mjs が公開スナップショットから生成し、認証情報や私的な長文メモは含みません。'
+    },
+    th: {
+      appName: 'คู่มือชีวิตเชียงใหม่', kicker: 'เดโมสาธารณะแบบอ่านอย่างเดียว', siteLink: 'เว็บไซต์ฉบับเต็ม ↗',
+      heroTitle: 'เปลี่ยนหมุด Google Maps ให้เป็นคู่มือที่ค้นหาได้',
+      heroLead: 'เว็บเวอร์ชันจัดระเบียบสถานที่ 150 แห่งในเชียงใหม่ให้เป็นรายการมีโครงสร้าง ค้นหาได้ กรองได้ และรองรับ 4 ภาษา เดโมนี้สร้างจากสแนปชอตสาธารณะในรีโพซิทอรี ไม่ต้องใช้บัญชี',
+      cmp: [
+        ['หมุดแน่น ๆ ต้องซูมไปมา', 'พิมพ์คำเดียวก็เจอ', 'ค้นชื่อ คำใบ้ย่าน หมวดหมู่ และที่อยู่ได้'],
+        ['ค้นโน้ตที่เขียนเองไม่ได้', 'ค้นเต็มข้อความ + กรอง', 'ค้นหา หมวดหมู่ และมุมมองใช้ผลชุดเดียวกัน'],
+        ['มีภาษาเดียว', 'จีน / อังกฤษ / ญี่ปุ่น / ไทย', 'หน้าจอ หมวดหมู่ และตัวกรองสลับพร้อมกัน']
+      ],
+      search: 'ค้นชื่อ ย่าน หมวดหมู่ ที่อยู่…', all: 'ทุกหมวดหมู่',
+      viewList: 'รายการ', viewMap: 'แผนที่', count: (n, t) => `แสดง ${n} จาก ${t} แห่ง`,
+      noResult: 'ไม่พบสถานที่ ลองคำค้นอื่นดู',
+      openMap: 'เปิดใน Google Maps ↗', website: 'เว็บไซต์ ↗',
+      address: 'ที่อยู่', hours: 'เวลาทำการ', phone: 'โทรศัพท์', area: 'โน้ตต้นฉบับ (ภาษาจีน)',
+      mapNote: 'แตะจุดเพื่อดูสถานที่ พิกัดมาจากสแนปชอตสาธารณะ เพื่อแสดงการกระจายเท่านั้น',
+      sideTitle: 'การกระจายของสถานที่', sideLead: 'แตะจุดบนแผนที่เพื่อดูรายละเอียด',
+      storyTitle: 'เว็บเวอร์ชันเทียบกับหมุด Google Maps แบบเดิม',
+      th: ['มิติ', 'เดิม: หมุด + สมุดโน้ต', 'ตอนนี้: เว็บคู่มือ'],
+      rows: [
+        ['หาสถานที่หนึ่งแห่ง', 'ซูม เลื่อน แตะหมุดทีละอัน', 'คำค้นตรงกับชื่อ โน้ต หมวดหมู่ ที่อยู่ทันที'],
+        ['ภาพรวม', 'จุดกระจัดกระจาย มองไม่เห็นโครงสร้าง', 'จำนวนรวมและหมวดหมู่ขึ้นต้น การ์ดอ่านง่าย'],
+        ['ค้นหา', 'ค้นโน้ตและป้ายกำกับของตัวเองไม่ได้', 'ค้นเต็มข้อความ + กรองหมวดหมู่'],
+        ['ภาษา', 'หน้าจอตามเครื่อง โน้ตมีภาษาเดียว', 'สลับ 4 ภาษาพร้อมกัน'],
+        ['ความหนาแน่นของข้อมูล', 'ตำแหน่งในแผนที่ คำอธิบายในแอปอื่น', 'การ์ดเดียวมีที่อยู่ เวลา โทรศัพท์ รูป และลิงก์แผนที่'],
+        ['มุมมอง', 'มีแค่แผนที่', 'มุมมองรายการและแผนที่'],
+        ['มือถือ', 'แอปนำทาง ใช้ off-line ไม่ได้', 'ติดตั้งเป็น PWA ได้ มีแคชทรัพยากร']
+      ],
+      footNote: 'เดโมแบบอ่านอย่างเดียว ไม่มีล็อกอิน การเสนอสถานที่ ตัวกรองระยะทาง หรือลูกโลกโต้ตอบ ข้อมูลสร้างโดย scripts/build-demo-data.mjs จากสแนปชอตสาธารณะ และไม่มีข้อมูลรับรองหรือโน้ตส่วนตัว'
+    }
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const catLabel = (p) => (p.labels && p.labels[lang]) || p.cat;
+  const subLabel = (p) => (p.subLabels && p.subLabels[lang]) || p.sub;
+
+  function haystack(p) {
+    return [p.name, p.hint, p.sub, p.address, p.cat]
+      .concat(p.tags || [])
+      .concat(Object.values(p.labels || {}))
+      .concat(Object.values(p.subLabels || {}))
+      .join(' ').toLowerCase();
+  }
+  PLACES.forEach((p) => { p._hay = haystack(p); });
+
+  function filtered() {
+    const q = $('q').value.trim().toLowerCase();
+    const cat = $('category').value;
+    return PLACES.filter((p) => (!cat || p.cat === cat) && (!q || p._hay.includes(q)));
+  }
+
+  function renderCompare() {
+    $('compare').innerHTML = I18N[lang].cmp.map((c) =>
+      `<div class="cmp"><div class="before">${esc(c[0])}</div><div class="after">${esc(c[1])}</div><div class="note">${esc(c[2])}</div></div>`
+    ).join('');
+  }
+
+  function renderStory() {
+    $('storyTitle').textContent = I18N[lang].storyTitle;
+    $('thDim').textContent = I18N[lang].th[0];
+    $('thBefore').textContent = I18N[lang].th[1];
+    $('thAfter').textContent = I18N[lang].th[2];
+    $('storyBody').innerHTML = I18N[lang].rows.map((r) =>
+      `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`
+    ).join('');
+  }
+
+  function card(p) {
+    const t = I18N[lang];
+    const meta = [];
+    if (p.address) meta.push(`<span><b>${esc(t.address)}:</b> ${esc(p.address)}</span>`);
+    if (p.hours && p.hours.length) meta.push(`<span><b>${esc(t.hours)}:</b> ${esc(p.hours.join(' / '))}</span>`);
+    if (p.phone) meta.push(`<span><b>${esc(t.phone)}:</b> ${esc(p.phone)}</span>`);
+    const links = [];
+    if (p.mapsUrl) links.push(`<a href="${esc(p.mapsUrl)}" target="_blank" rel="noopener">${esc(t.openMap)}</a>`);
+    if (p.website) links.push(`<a href="${esc(p.website)}" target="_blank" rel="noopener">${esc(t.website)}</a>`);
+    return `<article class="place">
+      ${p.photo ? `<img class="thumb" loading="lazy" src="${esc(p.photo)}" alt="" onerror="this.style.display='none'">` : ''}
+      <h3>${esc(p.name)}</h3>
+      <span class="pill">${esc(catLabel(p))}${p.sub ? ' · ' + esc(subLabel(p)) : ''}</span>
+      ${p.hint ? `<div class="hint">${esc(t.area)}: ${esc(p.hint)}</div>` : ''}
+      <div class="meta">${meta.join('')}</div>
+      <div class="actions">${links.join('')}</div>
+    </article>`;
+  }
+
+  function renderList(items) {
+    if (!items.length) {
+      $('grid').innerHTML = `<div class="empty">${esc(I18N[lang].noResult)}</div>`;
+      return;
+    }
+    $('grid').innerHTML = items.map(card).join('');
+  }
+
+  const PALETTE = ['#2f6a58', '#b8702f', '#4b74a8', '#8b5a86', '#6f8b3f', '#a8564e', '#3f8c8a', '#8a6d33'];
+  const colorOf = (cat) => {
+    let h = 0;
+    for (const ch of cat) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    return PALETTE[h % PALETTE.length];
+  };
+
+  function renderMap(items) {
+    const svg = $('plot');
+    const pts = items.filter((p) => p.lat != null && p.lng != null);
+    if (!pts.length) {
+      svg.innerHTML = `<text x="400" y="280" text-anchor="middle" fill="#6d7a72" font-size="16">${esc(I18N[lang].noResult)}</text>`;
+      $('selected').innerHTML = '';
+      return;
+    }
+    const lats = pts.map((p) => p.lat), lngs = pts.map((p) => p.lng);
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    const padX = 36, padY = 36, W = 800, H = 560;
+    const spanLat = Math.max(maxLat - minLat, 0.01), spanLng = Math.max(maxLng - minLng, 0.01);
+    const project = (p) => [
+      padX + ((p.lng - minLng) / spanLng) * (W - padX * 2),
+      H - padY - ((p.lat - minLat) / spanLat) * (H - padY * 2)
+    ];
+    const circles = pts.map((p) => {
+      const [x, y] = project(p);
+      const active = p.id === selectedId;
+      return `<circle data-id="${esc(p.id)}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${active ? 8 : 4.5}" fill="${colorOf(p.cat)}" fill-opacity="${active ? 1 : .72}" stroke="#fff" stroke-width="${active ? 2.5 : 1}"><title>${esc(p.name)}</title></circle>`;
+    }).join('');
+    svg.innerHTML = `<g>${circles}</g>`;
+    svg.querySelectorAll('circle').forEach((el) => {
+      el.addEventListener('click', () => {
+        selectedId = el.getAttribute('data-id');
+        const p = PLACES.find((x) => x.id === selectedId);
+        showSelected(p);
+        renderMap(filtered());
+      });
+    });
+    if (selectedId && !pts.some((p) => p.id === selectedId)) { selectedId = null; $('selected').innerHTML = ''; }
+  }
+
+  function showSelected(p) {
+    if (!p) return;
+    const t = I18N[lang];
+    const bits = [];
+    if (p.address) bits.push(`<p><b>${esc(t.address)}:</b> ${esc(p.address)}</p>`);
+    if (p.hint) bits.push(`<p><b>${esc(t.area)}:</b> ${esc(p.hint)}</p>`);
+    if (p.mapsUrl) bits.push(`<p><a href="${esc(p.mapsUrl)}" target="_blank" rel="noopener">${esc(t.openMap)}</a></p>`);
+    $('selected').innerHTML = `<h4>${esc(p.name)}</h4><p>${esc(catLabel(p))}${p.sub ? ' · ' + esc(subLabel(p)) : ''}</p>${bits.join('')}`;
+  }
+
+  function render() {
+    const items = filtered();
+    $('count').textContent = I18N[lang].count(items.length, PLACES.length);
+    renderList(items);
+    if (view === 'map') renderMap(items);
+  }
+
+  function applyLang() {
+    const t = I18N[lang];
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+    $('appName').textContent = t.appName;
+    $('kicker').textContent = t.kicker;
+    $('siteLink').textContent = t.siteLink;
+    $('heroTitle').textContent = t.heroTitle;
+    $('heroLead').textContent = t.heroLead.replace('150', String(PLACES.length));
+    $('q').placeholder = t.search;
+    $('viewList').textContent = t.viewList;
+    $('viewMap').textContent = t.viewMap;
+    $('mapNote').textContent = t.mapNote;
+    $('sideTitle').textContent = t.sideTitle;
+    $('sideLead').textContent = t.sideLead;
+    $('footNote').textContent = t.footNote;
+    $('footSite').textContent = t.siteLink.replace(' ↗', '') + ' cm.caishen.today ↗';
+    const sel = $('category');
+    const current = sel.value;
+    sel.innerHTML = `<option value="">${esc(t.all)} (${PLACES.length})</option>` + DATA.categories.map((c) => {
+      const sample = PLACES.find((p) => p.cat === c);
+      const label = sample && sample.labels ? sample.labels[lang] : c;
+      const n = PLACES.filter((p) => p.cat === c).length;
+      return `<option value="${esc(c)}">${esc(label)} (${n})</option>`;
+    }).join('');
+    sel.value = current;
+    document.querySelectorAll('#langs button').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
+    renderCompare();
+    renderStory();
+    if (selectedId) showSelected(PLACES.find((p) => p.id === selectedId));
+    render();
+  }
+
+  $('langs').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-lang]');
+    if (!b) return;
+    lang = b.dataset.lang;
+    applyLang();
+  });
+  $('q').addEventListener('input', render);
+  $('category').addEventListener('change', render);
+  $('views').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-view]');
+    if (!b) return;
+    view = b.dataset.view;
+    $('listView').hidden = view !== 'list';
+    $('mapView').hidden = view !== 'map';
+    document.querySelectorAll('#views button').forEach((x) => x.classList.toggle('active', x.dataset.view === view));
+    render();
+  });
+
+  applyLang();
+})();
+</script>
+</body>
+</html>
