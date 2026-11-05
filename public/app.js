@@ -256,6 +256,6 @@ $('#adminButton').onclick = openAdmin; $('#closeAdmin').onclick = () => $('#admi
 
 document.addEventListener('error', event => { const image = event.target; if (!(image instanceof HTMLImageElement) || !image.matches('[data-place-image]') || image.dataset.failed) return; image.dataset.failed = 'true'; const figure = image.closest('figure'); if (figure) { figure.classList.add('image-failed'); image.remove(); if (!figure.querySelector('.image-fallback')) figure.insertAdjacentHTML('afterbegin', `<div class="image-fallback" role="img" aria-label="${esc(t('imageUnavailable'))}"><span>□</span><small>${esc(t('imageUnavailable'))}</small></div>`); } else image.remove(); }, true);
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=23');
 applyLanguage();
 boot();
